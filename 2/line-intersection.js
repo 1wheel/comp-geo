@@ -21,14 +21,9 @@ render()
 
 
 d3.select(window).on('click', function(){
-	var badLine = null
-	lines.some(function(d){
-		return d.intersections.length ? badLine = d : null
-	})
+	var badPoint = points.sort(d3.descendingKey(ƒ('intersections')))[0]
+	if (!badPoint.intersections) return
 
-	if (!badLine) return
-
-	var badPoint = badLine[0]
 	var newLine = []
 	lines = lines.filter(function(d){
 		if (d[0] == badPoint) return (newLine[1] = d[1]) && false
@@ -47,6 +42,8 @@ d3.select(window).on('click', function(){
 function render(){
 	lines.forEach(function(l){ l.intersections = [] })
 
+	points.forEach(function(d){ d.intersections = 0 })
+
 	//todo : n ln n instead of n*n
 	var intersections = []
 	lines.forEach(function(l0, i){
@@ -54,7 +51,8 @@ function render(){
 			var intersect = intersection(l0[0], l0[1], l1[0], l1[1])
 
 			if (!intersect.isIntersection) return 
-			l0.intersections.push(intersect); l1.intersections.push(intersect); intersections.push(intersect)
+			intersections.push(intersect)
+			;[l0[0], l0[1], l1[0], l1[1]].forEach(function(p){ p.intersections++ })
 		})
 	})
 
