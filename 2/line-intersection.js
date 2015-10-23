@@ -1,40 +1,82 @@
 var w = h = 500
 
-var n = 15
+var n = 50
 
 var points = d3.range(n).map(function(d){
 	return P(Math.random()*w, Math.random()*h)
 })
 
 
-var lines = points.map(function(p){
-	return {origin: p}
+var lines = points.map(function(p, i){
+	return [p, points[(i + 1) % points.length]]
 })
-
-lines.forEach(function(l, i){
-	l.next = lines[(i + 1) % n]
-	l.prev = lines[(i - 1 + n) % n]
-})
-
 
 
 var m = 10
 var svg = d3.select('#graph').append('svg')
 		.attr({width: 500 + 2*m, height: 500 + 2*m})
-	.append('g')
-		.translate([m, m])
+	.append('g').translate([m, m])
+
+render()
 
 
-svg.dataAppend(lines, 'path.line').attr('d', function(d){
-	return ['M', d.origin, 'L', d.next.origin].join(' ')
+d3.select(window).on('click', function(){
+	var badLine = null
+	lines.some(function(d){
+		return d.intersections.length ? badLine = d : null
+	})
+
+	if (!badLine) return
+
+	var badPoint = badLine[0]
+	var newLine = []
+	lines = lines.filter(function(d){
+		if (d[0] == badPoint) return (newLine[1] = d[1]) && false
+		if (d[1] == badPoint) return (newLine[0] = d[0]) && false
+		return true
+	})
+	lines.push(newLine)
+
+	points = points.filter(function(d){ return d != badPoint })
+
+	render()
 })
 
 
 
+function render(){
+	lines.forEach(function(l){ l.intersections = [] })
 
-svg.dataAppend(points, 'circle')
-		.translate(ƒ())
-		.attr('r', 5)
+	//todo : n ln n instead of n*n
+	var intersections = []
+	lines.forEach(function(l0, i){
+		lines.slice(i + 2).forEach(function(l1){
+			var intersect = intersection(l0[0], l0[1], l1[0], l1[1])
+
+			if (!intersect.isIntersection) return 
+			l0.intersections.push(intersect); l1.intersections.push(intersect); intersections.push(intersect)
+		})
+	})
 
 
+	var lineSel = svg.selectAll('.line').data(lines, JSON.stringify)
+	lineSel.exit().classed('removed', true)
+	lineSel.enter().append('path.line').attr('d', function(d){
+		return ['M', d[0], 'L', d[1]].join(' ')
+	})
+
+	
+	var circleSel = svg.selectAll('.point').data(points, JSON.stringify)
+	circleSel.exit().classed('removed', true)
+	circleSel.enter().append('circle.point')
+			.translate(ƒ())
+			.attr('r', 5)
+
+	var intSel = svg.selectAll('.intersect').data(intersections, JSON.stringify)
+	intSel.exit().classed('removed', true)
+	intSel.enter().append('circle.intersect')
+			.style({fill: 'red'})
+			.attr('r', 3)
+			.translate(ƒ())	
+}
 
