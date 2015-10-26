@@ -1,20 +1,21 @@
-var w = h = 500
+var w = 700; h = 280
 
-var n = 500
+var n = 1000
 
 var m = 10
 var svg = d3.select('#graph').append('svg')
-		.attr({width: 500 + 2*m, height: 500 + 2*m})
+		.attr({width: w + 2*m, height: h + 2*m})
 	.append('g').translate([m, m])
 
 var path = svg.append('path.line').style('fill', 'none')
 
 
-var points, lines
+var points, lines, intersections = [];
 function setup(){
 	points = d3.range(n).map(function(d){
 		return P(Math.random()*w, Math.random()*h)
 	})
+	points.forEach(function(d){ d.intersections = [] })
 
 
 	lines = []
@@ -35,8 +36,14 @@ function setup(){
 	}
 	lines.push([curPoint, points[0]])
 
-	lines.forEach(function(d, i){ d.i = i })
+	lines.forEach(function(d, i){ d.i = i; d.intersections = [] })
 
+
+	svg.selectAll('circle').remove()
+	svg.dataAppend(points, 'circle.point')
+			.translate(ƒ())
+			.attr('r', 3)
+			.each(function(d){ d.sel = d3.select(this) })
 
 	render()	
 }
@@ -53,13 +60,23 @@ function step(){
 	if (!badPoint.intersections) return
 
 	var newLine = []
-	var newIndex, remIndex
+	var removedLines = []
 	lines.forEach(function(d, i){
-		if (d[0] == badPoint) (newLine[1] = d[1]) && (newIndex = i)
-		if (d[1] == badPoint) (newLine[0] = d[0]) && (remIndex = i)
+		if (d[0] == badPoint) (newLine[1] = d[1]) && (newIndex = i) && removedLines.push(d)
+		if (d[1] == badPoint) (newLine[0] = d[0]) && (remIndex = i) && removedLines.push(d)
 	})
 	lines[newIndex] = newLine
+	newLine.intersections = []
 	lines.splice(remIndex, 1)
+
+	badPoint.intersections.forEach(function(intersect){
+		intersect.removed = true
+	})
+
+
+	intersections = intersections.filter(ƒ('removed', negFn))
+	lines.concat(points).forEach(function(d){
+		d.intersections = d.intersections.filter(ƒ('removed', negFn)) })
 
 	points = points.filter(function(d){ return d != badPoint })
 	badPoint.sel.remove()
@@ -70,36 +87,26 @@ function step(){
 
 
 function render(){
-	lines.forEach(function(l){ l.intersections = [] })
-
-	points.forEach(function(d){ d.intersections = [] })
-
 	//todo : n ln n instead of n*n
-	var intersections = []
-	lines.forEach(function(l0, i){
+	lines.filter(ƒ('clean', negFn)).forEach(function(l0, i){
 		lines.slice(i + 1).forEach(function(l1){
-			if (l0[0] == l1[1] || l0[1] == l1[0]) return 
+			if (l0[0] == l1[0] || l0[0] == l1[1] || l0[1] == l1[0] || l0[1] == l1[1]) return
 
 			var intersect = intersection(l0[0], l0[1], l1[0], l1[1])
 
 			if (!intersect.isIntersection) return 
+			if (isNaN(intersect.x)) debugger
 			intersections.push(intersect)
-			;[l0[0], l0[1], l1[0], l1[1]].forEach(function(p){ p.intersections.push(intersect) })
+			;[l0, l0[0], l0[1], l1, l1[0], l1[1]].forEach(function(p){ p.intersections.push(intersect) })
 		})
+		l0.clean = true
 	})
 
 
-	path.attr('d', 'M' + lines.map(ƒ('0')).join('L'))
+	path.attr('d', 'M' + lines.map(ƒ('0')).join('L') + 'Z')
 	
-	var circleSel = svg.selectAll('.point').data(points, function(d){ return d.toString() })
-	circleSel.exit().classed('removed', true).remove()
-	circleSel.enter().append('circle.point')
-			.translate(ƒ())
-			.attr('r', 3)
-			.each(function(d){ d.sel = d3.select(this) })
-
-	var intSel = svg.selectAll('.intersect').data(intersections, JSON.stringify)
-	intSel.exit().classed('removed', true).remove()
+	var intSel = svg.selectAll('.intersect').data(intersections, function(d){ return d.toString() })
+	intSel.exit().remove()
 	intSel.enter().append('circle.intersect')
 			.style({fill: 'red', 'fill-opacity': 1, stroke: 'red'})
 			.attr('r', 3)

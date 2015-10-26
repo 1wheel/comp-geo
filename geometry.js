@@ -49,3 +49,4 @@ function lineXatY(l, y){
 
 function toPathStr(d){ return 'M' + d.join('L') }
 
+function negFn(d){ return !d }
