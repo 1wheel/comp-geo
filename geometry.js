@@ -50,3 +50,5 @@ function lineXatY(l, y){
 function toPathStr(d){ return 'M' + d.join('L') }
 
 function negFn(d){ return !d }
+
+function clamp(a,b,c){ return Math.min(a, Math.max(b, c)) }
