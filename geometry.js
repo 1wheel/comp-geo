@@ -1,6 +1,11 @@
 //creates new point 
 function P(x, y, color){
-	var rv = {x: x, y: y, color: color || 'black'}
+	var rv
+	if (x.map){
+		rv = {x: x[0], y: x[1], color: 'black'}
+	} else{
+		rv = {x: x, y: y, color: color || 'black'}
+	}
 	rv.toString = function(){ return rv.x + ',' + rv.y }
 	return rv
 }
@@ -52,3 +57,12 @@ function toPathStr(d){ return 'M' + d.join('L') }
 function negFn(d){ return !d }
 
 function clamp(a,b,c){ return Math.max(a, Math.min(b, c)) }
+
+function pairs(array){
+	var rv = []
+	array.forEach(function(d, i){
+		for (var j = i + 1; j < array.length; j++) rv.push([d, array[j]])
+	})
+
+	return rv
+}
