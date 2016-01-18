@@ -34,8 +34,11 @@ function intersection(a, b, c, d){
 	iy = (l*(c.y - d.y) - m*(a.y - b.y))/det,
 	i = P(ix, iy)
 
+	i.isOverlap = (ix == a.x && iy == a.y) || (ix == b.x && iy == b.y)
+
 	i.isIntersection = !(a.x < ix ^ ix < b.x) 
 	              	&& !(c.x < ix ^ ix < d.x)
+	              	&& !i.isOverlap
 
 	return i
 }

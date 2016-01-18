@@ -72,7 +72,10 @@ function render(){
 
 
 
-
-//copy(JSON.stringify(points))
 points = [[385,269],[518,338],[562,158],[475,97],[164,187],[199,406],[416,445]].map(P)
+
+//copy(JSON.stringify(points.map(function(d){ return [d.x, d.y] })))
+
+points = [[562,158],[475,97],[164,187]].map(P)
+
 render()
