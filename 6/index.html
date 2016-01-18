@@ -11,17 +11,23 @@ body{
 
 
 
-circle{
+.point{
 	stroke: black;
-	fill-opacity: .3;
+	fill: #ccc;
+	/*fill-opacity: .3;*/
+	cursor: pointer;
 }
 
 .line{
 	stroke: black;
+	stroke-width: 2;
+	pointer-events: none;
 }
 
-.removed{
-	opacity: .1;
+.pairpath{
+	fill: none;
+	stroke: black;
+	pointer-events: none;
 }
 
 svg{

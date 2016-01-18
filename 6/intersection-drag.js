@@ -13,7 +13,7 @@ var svg = d3.select('#graph').append('svg')
     .attr({width: w, height: h})
 
 
-var path = svg.append('path').style({stroke: '#000', fill: '#ccc'})
+var path = svg.append('path.line').style({stroke: '#000', fill: '#ccc'})
 
 svg.append('rect').attr({width: w, height: h, opacity: 0})
     .on('click', function(){
@@ -23,9 +23,10 @@ svg.append('rect').attr({width: w, height: h, opacity: 0})
 
 
 function render(){
-  var circles = svg.selectAll('circle').data(points)
+  var circles = svg.selectAll('circle.point').data(points)
 
   circles.enter().append('circle')
+      .classed('point', true)
       .attr('r', 10)
       .call(drag)
       .on('contextmenu', function(d){
@@ -40,7 +41,6 @@ function render(){
 
   path.attr('d', 'M' + points.join('L') + 'Z')
 
-
   lines = []
   points.forEach(function(d, i){
     lines.push([d, points[(i + 1) % points.length]])
@@ -48,8 +48,21 @@ function render(){
 
   linePairs = pairs(lines)
 
-  intersections = linePairs.map(function(a, b){
-    return intersection(a[0], a[1], b[0], b[1]) })
+  intersections = linePairs.map(function(d){
+    return intersection(d[0][0], d[0][1], d[1][0], d[1][1]) })
+
+
+  d3.selectAll('.pairpath').remove()
+  svg.dataAppend(linePairs, 'path.pairpath')
+      .attr('d', function(d, i){
+        return ['M', d[0], 'L', intersections[i], 'L', d[1]].join(' ') 
+      })
+
+  d3.selectAll('.intersection').remove()
+  svg.dataAppend(intersections, 'circle.intersection')
+      .translate(ƒ())
+      .style('fill', function(d){ return d.isIntersection ? 'red' : 'grey' })
+      .attr('r', 3)
 
 
 }
