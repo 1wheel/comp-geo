@@ -51,4 +51,4 @@ function toPathStr(d){ return 'M' + d.join('L') }
 
 function negFn(d){ return !d }
 
-function clamp(a,b,c){ return Math.min(a, Math.max(b, c)) }
+function clamp(a,b,c){ return Math.max(a, Math.min(b, c)) }
