@@ -7,7 +7,14 @@ function P(x, y, color){
 		rv = {x: x, y: y, color: color || 'black'}
 	}
 	rv.toString = function(){ return rv.x + ',' + rv.y }
+	rv.type = 'point'
 	return rv
+}
+
+function clone(d){
+	if (d.type == 'point'){
+		return P(d.x, d.y, d.color)
+	}
 }
 
 
@@ -47,6 +54,15 @@ function isLeft(a, b, c){
 	return (b.x - a.x)*(c.y - a.y) - (b.y - a.y)*(c.x - a.x) > 0
 }
 
+//http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle
+function triangleContains(a, b, c, p){
+	var b1 = isLeft(p, a, b)
+	var b2 = isLeft(p, b, c)
+	var b3 = isLeft(p, c, a)
+
+	return (b1 == b2) && (b2 == b3)
+}
+
 function lineXatY(l, y){
 	var a = l[0], b = l[1],
 			m = (a.y - b.y)/(a.x - b.x)
@@ -69,3 +85,6 @@ function pairs(array){
 
 	return rv
 }
+
+
+function mod(n, m){ return ((n % m) + m) % m }

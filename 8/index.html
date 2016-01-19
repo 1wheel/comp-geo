@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<style>
+body{
+	padding-top: 20px;
+	max-width: 960px;
+	margin: 0px auto;
+	font-family: monospace;
+}
+
+
+
+.point{
+	stroke: black;
+	fill: #ccc;
+	/*fill-opacity: .3;*/
+	cursor: pointer;
+}
+
+.line{
+	stroke: black;
+	stroke-width: 2;
+	pointer-events: none;
+}
+
+.pairpath{
+	fill: none;
+	stroke: black;
+	pointer-events: none;
+}
+
+svg{
+	overflow: visible;
+	border: 1px solid #ccc;
+}
+
+</style>
+
+
+
+<div id='graph'></div>
+
+
+<script src="../libs/d3.js"></script>
+<script src="../libs/d3-jetpack.js"></script>
+<script src="../libs/d3-starterkit.js"></script>
+<script src="../libs/lodash.js"></script>
+
+<script src='../geometry.js'></script>
+
+
+<script src='tricontains-test.js'></script>
