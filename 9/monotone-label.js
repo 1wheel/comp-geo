@@ -23,7 +23,7 @@ svg.append('rect').attr({width: w, height: h, opacity: 0})
 
 
 points =  [[454,239],[630,126],[164,187],[266,459],[611,341],[488,318],[388,336],[287,324]].map(P)
-points = [[423,20],[152,115],[588,227]].map(P)
+points = [[80,284],[265,237],[737,329],[468,67],[324,188],[202,93],[66,156]].map(P)
 render()
 
 
@@ -36,19 +36,17 @@ function pointsToPoly(points){
 
 function addLabels(points){
   points.forEach(function(d){
-    var abovePrev = d.y > d.prev.y || (d.y == d.prev.y && d.x < d.prev.x)
-    var aboveNext = d.y > d.next.y || (d.y == d.next.y && d.x < d.next.x)
+    var abovePrev = d.y < d.prev.y || (d.y == d.prev.y && d.x < d.prev.x)
+    var aboveNext = d.y < d.next.y || (d.y == d.next.y && d.x < d.next.x)
 
-    var angle = calcAngle(d.prev, d, d.next)
+    var isLeftPoint = isLeft(d.prev, d, d.next)
     if (abovePrev && aboveNext){
-      d.type = angle < Math.PI ? 'start' : 'end'
+      d.type = !isLeftPoint ? 'start' : 'split'
     } else if (!abovePrev && !aboveNext){
-      d.type = angle < Math.PI ? 'split' : 'merge'
+      d.type = !isLeftPoint ? 'end' : 'merge'
     } else {
       d.type = 'regular'
     }
-
-    d.type = d.type + ' ' + d3.format('.2f')(angle)
   })
 }
 
