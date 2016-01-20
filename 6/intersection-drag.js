@@ -1,7 +1,5 @@
 var w = 960; h = 500
-
 var points = []
-
 var drag = d3.behavior.drag().on('drag', function(d){
   d.x = clamp(0, d3.event.x, w)
   d.y = clamp(0, d3.event.y, h)
