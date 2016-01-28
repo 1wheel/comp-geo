@@ -99,7 +99,7 @@ function calcQueue(){
 
   statusT = []
 
-  queue.forEach(function(d){
+  queue.forEach(function(d, i){
     var y = d.y
     if (d.line && d.line[0] == d){
       // insert
@@ -111,7 +111,7 @@ function calcQueue(){
       // removal 
       var index = statusT.indexOf(d.line)
       statusT.splice(index, 1)
-      d.line.queuePositions.push({x: index, y: y - 10})
+      d.line.queuePositions.push({x: index, y: Math.max(y - 10, queue[i - 1].y)})
 
     } else{
       // intersection
