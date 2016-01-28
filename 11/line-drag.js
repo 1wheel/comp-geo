@@ -18,9 +18,13 @@ svg.append('rect').attr({width: w, height: h, opacity: 0})
       render()
     })
 
-var color = d3.scale.category10()
 
-points =  [[454,239],[630,126],[164,187],[266,459],[611,341],[488,318],[388,336],[287,324]].map(P)
+var colors = ['#F44336', '#2196F3', '#4CAF50', '#9C27B0', '#FF9800', '#795548']
+colors = colors.concat(colors.map(function(d){ return d3.rgb(d).brighter(2) }))
+colors = colors.concat(colors.map(function(d){ return d3.rgb(d).darker(3) }))
+
+//copy(JSON.stringify(points.map(function(d){ return [d.x, d.y] })))
+points =  [[611,341],[488,318],[388,336],[413,484],[655,216],[783,360],[796,191],[755,95],[616,52],[477,53],[312,349],[356,394]].map(P)
 render()
 
 
@@ -34,13 +38,15 @@ function render(){
         if (i % 2) lines.push([d, points[i - 1]])
       })
 
+
+  openColors = colors.slice() 
   lines.forEach(function(d, i){
     //don't change colors on remove
-    d.color = d[0].color != 'black' ? d[0].color : color(i)
+    d.color = d[0].line && d[0].line.color ? d[0].line.color : openColors[0]
     d[0].line = d
-    d[0].color = d.color
     d[1].line = d
-    d[1].color = d.color
+
+    openColors = openColors.filter(function(color){ return color != d.color })
   })
 
 
@@ -61,7 +67,8 @@ function render(){
 
   circleSel
       .translate(ƒ())
-      .style('fill', ƒ('color'))
+    .filter(ƒ('line'))
+      .style('fill', ƒ('line', 'color'))
 
   circleSel.exit().remove()
 
