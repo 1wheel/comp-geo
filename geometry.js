@@ -130,7 +130,6 @@ function tree(array){
     while (array[i] && val > key(array[i])) i++
     if (array[i] && val == key(array[i])) return // don't add dupes
     array.splice(i, 0, d)
-    console.log('added')
   }
 
   array.remove = function(d){

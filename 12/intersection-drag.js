@@ -29,6 +29,8 @@ var queueLine = d3.svg.line()
 
 //copy(JSON.stringify(points.map(function(d){ return [d.x, d.y] })))
 points =  [[611,341],[488,318],[388,336],[413,484],[655,216],[783,360],[798,245],[716,6],[546,126],[782,65],[314,177],[356,394]].map(P)
+// points = [[916,299],[779,477],[640,367],[716,6],[793,131],[787,87]].map(P)
+points = [[646,89],[783,360],[486,462],[782,65],[846,181],[365,422]].map(P)
 render()
 
 
@@ -76,12 +78,24 @@ function render(){
   circleSel.exit().remove()
 
 
+  linesByY.forEach(function(d){
+    d.positions = []
+    d.queuePositions.forEach(function(p, i){
+      d.positions.push(p)
+      var nextY = d.queuePositions[i + 1] && d.queuePositions[i + 1].y
+      console.log('hop', p.y, nextY)
+      if (nextY > p.y + 10){
+        d.positions.push({x: p.x, y: nextY - 10})
+      }
+    })
+  })
+
   var queueSel = svg.selectAll('path.queue').data(linesByY)
   queueSel.enter().append('path.queue')
   queueSel
       .style({stroke: ƒ('color'), fill: 'none', 'stroke-width': 3})
       .attr('d', function(d, i){ return ['M', i*20 + 20, d[0].y, 'V', d[1].y].join(' ') })
-      .attr('d', function(d){ return queueLine(_.sortBy(d.queuePositions, 'y')) })
+      .attr('d', function(d){ return queueLine(_.sortBy(d.positions, 'y')) })
   queueSel.exit().remove()
 
 
@@ -138,13 +152,6 @@ function calcQueue(){
       d.queuePositions.push({x: i, y: y})
     })
 
-    var nextInQueue = queue[i + i]
-    if (nextInQueue && nextInQueue.y > y + 40){
-      console.log(y, nextInQueue.y)
-      statusT.forEach(function(d, i){
-        d.queuePositions.push({x: i, y: nextInQueue.y - 20})
-      })
-    }
 
     function checkIntersection(a, b){
       if (!a || !b) return 
