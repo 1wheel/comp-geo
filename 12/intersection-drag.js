@@ -36,7 +36,7 @@ render()
 function render(){
   lines = []
   points.forEach(function(d, i){
-        if (i % 2) lines.push(_.sortBy([d, points[i - 1]], 'y')) })
+    if (i % 2) lines.push(_.sortBy([d, points[i - 1]], 'y')) })
 
   openColors = colors.slice() 
   lines.forEach(function(d, i){
@@ -90,7 +90,10 @@ function render(){
 
 
 function calcQueue(){
-  queue = _.sortBy(points, 'y')
+  queue = tree(points.slice())
+    .key(function(d){ return d.y + .00001*d.x })
+
+
 
   linesByY = _.sortBy(lines, ƒ(0, 'y'))
   linesByY.forEach(function(d){
@@ -106,6 +109,7 @@ function calcQueue(){
       var i = 0; 
       while (statusT[i] && d.x < lineXatY(statusT[i], d.y)) i++
       statusT.splice(i, 0, d.line)
+      checkIntersection(d.line, statusT[i + 1])
 
     } else if (d.line){
       // removal 
@@ -115,12 +119,19 @@ function calcQueue(){
 
     } else{
       // intersection
+      debugger
 
     }
 
     statusT.forEach(function(d, i){
       d.queuePositions.push({x: i, y: y})
     })
+
+    function checkIntersection(a, b){
+      if (!a || !b) return 
+      var i = intersection(a[0], a[1], b[0], b[1])
+      if (i.intersection) queue.interset(i)
+    }
 
   })
 

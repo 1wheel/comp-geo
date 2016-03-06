@@ -117,3 +117,41 @@ function pairs(array){
 
 
 function mod(n, m){ return ((n % m) + m) % m }
+
+
+
+
+function tree(array){
+  var key = function(d){ return d }
+
+  array.insert = function(d){
+    var i = 0
+    var val = key(d)
+    while (array[i] && val < val(array[i])) i++
+    if (array[i] && val == val(array[i])) return // don't add dupes
+    array.splice(i, 0, d.line)
+  }
+
+  array.remove = function(d){
+    var index = array.indexOf(d.line)
+    array.splice(index, 1)
+  }
+
+  array.swap = function(i, j){
+
+  }
+
+  // nukes existing array
+  // array.array = function(_){
+  //   array = _
+  //   return array
+  // }
+
+  array.key = function(_){
+    key = _ 
+    array.sort(d3.ascendingKey(key))
+    return array
+  }
+
+  return array
+}
