@@ -28,7 +28,7 @@ var queueLine = d3.svg.line()
     .y(ƒ('y'))
 
 //copy(JSON.stringify(points.map(function(d){ return [d.x, d.y] })))
-points =  [[611,341],[488,318],[388,336],[413,484],[655,216],[783,360],[798,245],[755,95],[579,232],[477,53],[314,177],[356,394]].map(P)
+points =  [[611,341],[488,318],[388,336],[413,484],[655,216],[783,360],[798,245],[716,6],[546,126],[782,65],[314,177],[356,394]].map(P)
 render()
 
 
@@ -81,7 +81,7 @@ function render(){
   queueSel
       .style({stroke: ƒ('color'), fill: 'none', 'stroke-width': 3})
       .attr('d', function(d, i){ return ['M', i*20 + 20, d[0].y, 'V', d[1].y].join(' ') })
-      .attr('d', ƒ('queuePositions', queueLine))
+      .attr('d', function(d){ return queueLine(_.sortBy(d.queuePositions, 'y')) })
   queueSel.exit().remove()
 
 
@@ -102,38 +102,60 @@ function calcQueue(){
 
   statusT = []
 
-  queue.forEach(function(d, i){
+
+  for (var i = 0; i < queue.length; i++){
+    var d = queue[i]
     var y = d.y
     if (d.line && d.line[0] == d){
       // insert
-      var i = 0; 
-      while (statusT[i] && d.x < lineXatY(statusT[i], d.y)) i++
-      statusT.splice(i, 0, d.line)
-      checkIntersection(d.line, statusT[i + 1])
+      var j = 0; 
+      while (statusT[j] && d.x < lineXatY(statusT[j], d.y)) j++
+      statusT.splice(j, 0, d.line)
+      checkIntersection(d.line, statusT[j + 1])
+      checkIntersection(d.line, statusT[j - 1])
 
     } else if (d.line){
       // removal 
       var index = statusT.indexOf(d.line)
       statusT.splice(index, 1)
       d.line.queuePositions.push({x: index, y: Math.max(y - 10, queue[i - 1].y)})
-
+      checkIntersection(statusT[i - 1], statusT[i])
     } else{
       // intersection
-      debugger
+      var indexA = statusT.indexOf(d.lineA)
+      var indexB = statusT.indexOf(d.lineB)
+      statusT[indexA] = d.lineB
+      statusT[indexB] = d.lineA
 
+      var minIndex = indexA < indexB ? indexA : indexB
+      if (indexA < indexB){
+        checkIntersection(statusT[minIndex - 1], statusT[minIndex])
+        checkIntersection(statusT[minIndex + 1], statusT[minIndex + 2])
+      }
     }
 
     statusT.forEach(function(d, i){
       d.queuePositions.push({x: i, y: y})
     })
 
+    var nextInQueue = queue[i + i]
+    if (nextInQueue && nextInQueue.y > y + 40){
+      console.log(y, nextInQueue.y)
+      statusT.forEach(function(d, i){
+        d.queuePositions.push({x: i, y: nextInQueue.y - 20})
+      })
+    }
+
     function checkIntersection(a, b){
       if (!a || !b) return 
       var i = intersection(a[0], a[1], b[0], b[1])
-      if (i.intersection) queue.interset(i)
+      i.lineA = a
+      i.lineB = b
+      if (i.isIntersection) queue.insert(i)
     }
+  }
 
-  })
+
 
 }
 

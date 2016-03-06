@@ -127,9 +127,10 @@ function tree(array){
   array.insert = function(d){
     var i = 0
     var val = key(d)
-    while (array[i] && val < val(array[i])) i++
-    if (array[i] && val == val(array[i])) return // don't add dupes
-    array.splice(i, 0, d.line)
+    while (array[i] && val > key(array[i])) i++
+    if (array[i] && val == key(array[i])) return // don't add dupes
+    array.splice(i, 0, d)
+    console.log('added')
   }
 
   array.remove = function(d){
