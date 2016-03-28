@@ -1,7 +1,7 @@
-var w = 960; h = 500
+var w = 960, h = 500, dragW = 960 - 200
 var points = []
 var drag = d3.behavior.drag().on('drag', function(d){
-  d.x = clamp(300, d3.event.x, w)
+  d.x = clamp(0, d3.event.x, dragW)
   d.y = clamp(0, d3.event.y, h)
   render()
 })
@@ -9,7 +9,7 @@ var drag = d3.behavior.drag().on('drag', function(d){
 var svg = d3.select('#graph').append('svg')
     .attr({width: w, height: h})
 
-svg.append('path').attr('d', 'M300,0v' + h).style('stroke', '#ccc')
+svg.append('path').attr('d', 'M' + dragW + ',0v' + h).style('stroke', '#ccc')
 
 
 svg.append('rect').attr({width: w, height: h, opacity: 0})
@@ -21,10 +21,9 @@ svg.append('rect').attr({width: w, height: h, opacity: 0})
 var colors = ['#F44336', '#2196F3', '#4CAF50', '#9C27B0', '#FF9800', '#795548']
 colors = colors.concat(colors.map(function(d){ return d3.rgb(d).brighter(2) }))
 colors = colors.concat(colors.map(function(d){ return d3.rgb(d).darker(3) }))
-// colors = ['red', 'green', 'steelblue']
 
 var queueLine = d3.svg.line()
-    .x(function(d){ return -d.x*20 + 200})
+    .x(function(d){ return d.x*20 + dragW + 20})
     .y(ƒ('y'))
 
 //copy(JSON.stringify(points.map(function(d){ return [d.x, d.y].map(Math.round) })))
@@ -61,10 +60,9 @@ function render(){
   lineSel.style({stroke: ƒ('color')}).attr('d', toPathStr)
   lineSel.exit().remove()
 
-  var intersectionSel = svg.selectAll('circle.intersection').data(intersections)
-  intersectionSel.enter().append('circle.intersection')
-  intersectionSel.attr({cx: ƒ('x'), cy: ƒ('y'), r: 5, fill: 'none', stroke: '#000'})
-  intersectionSel.exit().remove()
+  svg.selectAll('circle.intersection').remove()
+  svg.dataAppend(intersections, 'circle.intersection')
+      .attr({cx: ƒ('x'), cy: ƒ('y'), r: 5, fill: 'none', stroke: '#000'})
 
   var circleSel = svg.selectAll('g.point').data(points)
   var circleEnter = circleSel.enter().append('g.point')
@@ -89,7 +87,6 @@ function render(){
     d.queuePositions.forEach(function(p, i){
       d.positions.push(p)
       var nextY = d.queuePositions[i + 1] && d.queuePositions[i + 1].y
-      // console.log('hop', p.y, nextY)
       if (nextY > p.y + 10){
         d.positions.push({x: p.x, y: nextY - 10})
       }
@@ -100,11 +97,8 @@ function render(){
   queueSel.enter().append('path.queue')
   queueSel
       .style({stroke: ƒ('color'), fill: 'none', 'stroke-width': 3})
-      .attr('d', function(d, i){ return ['M', i*20 + 20, d[0].y, 'V', d[1].y].join(' ') })
       .attr('d', function(d){ return queueLine(_.sortBy(d.positions, 'y')) })
   queueSel.exit().remove()
-
-
 }
 
 
@@ -144,12 +138,10 @@ function calcQueue(){
     } else if (d.lineA && d.lineB){
       // intersection
       statusT.key(function(e){ return lineXatY(e, d.y - 1e-6) })
-      var indexA0 = statusT.findIndex(d.lineA)
-      var indexB0 = statusT.findIndex(d.lineB)
-      if (indexA0 == indexB0) indexA0 = indexA0 + 1
-      var indexA = statusT.indexOf(d.lineA)
-      var indexB = statusT.indexOf(d.lineB)
-      console.log('A', indexA, indexA0, 'B', indexB, indexB0)
+
+      var indexA = statusT.findIndex(d.lineA)
+      var indexB = statusT.findIndex(d.lineB)
+      if (indexA == indexB) indexA = indexA + 1
       statusT[indexA] = d.lineB
       statusT[indexB] = d.lineA
 
