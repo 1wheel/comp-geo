@@ -112,6 +112,7 @@ function render(){
 function calcQueue(){
   queue = tree(points.slice())
     .key(function(d){ return d.y + .00001*d.x })
+    .order()
 
   intersections = []
 
@@ -153,15 +154,12 @@ function calcQueue(){
       checkIntersection(statusT[minIndex + 1], statusT[minIndex + 2])
     }
 
-    console.log(statusT.map(ƒ('color')))
     statusT.forEach(function(d, i){
       d.queuePositions.push({x: i, y: y})
     })
 
-
     function checkIntersection(a, b){
       if (!a || !b) return 
-      console.log(a.color, b.color)
       var i = intersection(a[0], a[1], b[0], b[1])
       i.lineA = a
       i.lineB = b

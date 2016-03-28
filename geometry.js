@@ -123,32 +123,32 @@ function mod(n, m){ return ((n % m) + m) % m }
 
 function tree(array){
   var key = function(d){ return d }
+  var bisect = d3.bisector(function(d){ return key(d) }).left
 
   array.insert = function(d){
-    var i = 0
+    var i = array.findIndex(d)
     var val = key(d)
-    while (array[i] && val > key(array[i])) i++
     if (array[i] && val == key(array[i])) return // don't add dupes
     array.splice(i, 0, d)
   }
 
   array.remove = function(d){
     var index = array.indexOf(d.line)
-    array.splice(index, 1)
+    array.splice(array.findIndex(d), 1)
   }
 
   array.swap = function(i, j){
 
   }
 
-  // nukes existing array
-  // array.array = function(_){
-  //   array = _
-  //   return array
-  // }
+  array.findIndex = function(d){ return bisect(array, key(d)) }
 
   array.key = function(_){
     key = _ 
+    return array
+  }
+
+  array.order = function(){
     array.sort(d3.ascendingKey(key))
     return array
   }
