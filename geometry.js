@@ -130,11 +130,13 @@ function tree(array){
     var val = key(d)
     if (array[i] && val == key(array[i])) return // don't add dupes
     array.splice(i, 0, d)
+    return i
   }
 
   array.remove = function(d){
-    var index = array.indexOf(d.line)
-    array.splice(array.findIndex(d), 1)
+    var i = array.findIndex(d)
+    array.splice(i, 1)
+    return i
   }
 
   array.swap = function(i, j){

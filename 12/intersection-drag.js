@@ -122,7 +122,7 @@ function calcQueue(){
     d.queuePositions = []
   })
 
-  statusT = []
+  statusT = tree([])
 
 
   for (var i = 0; i < queue.length; i++){
@@ -130,22 +130,26 @@ function calcQueue(){
     var y = d.y
     if (d.line && d.line[0] == d){
       // insert
-      var j = 0; 
-      while (statusT[j] && d.x < lineXatY(statusT[j], d.y)) j++
-      statusT.splice(j, 0, d.line)
-      checkIntersection(d.line, statusT[j + 1])
-      checkIntersection(d.line, statusT[j - 1])
-
+      var index = statusT
+          .key(function(e){ return lineXatY(e, d.y) })
+          .insert(d.line)
+      checkIntersection(d.line, statusT[index + 1])
+      checkIntersection(d.line, statusT[index - 1])
     } else if (d.line){
       // removal 
       var index = statusT.indexOf(d.line)
       statusT.splice(index, 1)
       d.line.queuePositions.push({x: index, y: Math.max(y - 10, queue[i - 1].y)})
       checkIntersection(statusT[i - 1], statusT[i])
-    } else{
+    } else if (d.lineA && d.lineB){
       // intersection
+      statusT.key(function(e){ return lineXatY(e, d.y - 1e-6) })
+      var indexA0 = statusT.findIndex(d.lineA)
+      var indexB0 = statusT.findIndex(d.lineB)
+      if (indexA0 == indexB0) indexA0 = indexA0 + 1
       var indexA = statusT.indexOf(d.lineA)
       var indexB = statusT.indexOf(d.lineB)
+      console.log('A', indexA, indexA0, 'B', indexB, indexB0)
       statusT[indexA] = d.lineB
       statusT[indexB] = d.lineA
 
