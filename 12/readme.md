@@ -1,0 +1,5 @@
+The [Bentley–Ottmann algorithm](https://en.wikipedia.org/wiki/Bentley%E2%80%93Ottmann_algorithm) finds all the intersections that occur in a set of line segments. Drag the endpoints of the line to move, click to add and right click to remove. 
+
+Instead of calculating the intersection of every pair of segments, which would require O(n²) comparisons for a set of n lines, the algorithm uses a sweep line. Starting at the top of the screen and moving down, it keeps track of order of the lines' x positions at the current y position (represented by the figure on the right). As lines start, end or intersect, new pairs of lines become adjacent in the x ordering and are checked for intersections. 
+
+A set of lines with I intersections ends up only requiring O(n log n + I log n) operations.  [Computational Geometry: Algorithms and Applications, chapter 2](http://www.cs.uu.nl/geobook/) has a proof and a more detailed explanation. 

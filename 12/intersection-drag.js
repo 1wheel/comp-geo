@@ -1,4 +1,4 @@
-var w = 960, h = 500, dragW = 960 - 200
+var w = 960, h = 500, dragW = 960 - 200 , ε = 1e-9
 var points = []
 var drag = d3.behavior.drag().on('drag', function(d){
   d.x = clamp(0, d3.event.x, dragW)
@@ -10,7 +10,6 @@ var svg = d3.select('#graph').append('svg')
     .attr({width: w, height: h})
 
 svg.append('path').attr('d', 'M' + dragW + ',0v' + h).style('stroke', '#ccc')
-
 
 svg.append('rect').attr({width: w, height: h, opacity: 0})
     .on('click', function(){
@@ -29,9 +28,9 @@ var queueLine = d3.svg.line()
 //copy(JSON.stringify(points.map(function(d){ return [d.x, d.y].map(Math.round) })))
 // points =  [[611,341],[488,318],[388,336],[413,484],[655,216],[783,360],[798,245],[716,6],[546,126],[782,65],[314,177],[356,394]].map(P)
 // points = [[916,299],[779,477],[640,367],[716,6],[793,131],[787,87]].map(P)
-points = [[646,89],[783,360],[486,462],[782,65],[846,140],[365,422]].map(P)
+// points = [[646,89],[783,360],[486,462],[782,65],[846,140],[365,422]].map(P)
 
-// points = [[646,89],[745,369],[486,462],[782,65],[885,55],[585,453]].map(P)
+points = [[200,12],[612,401],[375,486],[581,21],[680,25],[106,414],[135,478],[333,51],[120,74],[590,473]].map(P)
 render()
 
 
@@ -42,6 +41,7 @@ function render(){
 
   openColors = colors.slice() 
   lines.forEach(function(d, i){
+    if (d[0].x == d[1].x) d[0].x += ε
 
     //don't change colors on remove
     d.color = d[0].line && d[0].line.color ? d[0].line.color : openColors[0]
@@ -105,7 +105,7 @@ function render(){
 
 function calcQueue(){
   queue = tree(points.slice())
-    .key(function(d){ return d.y + .00001*d.x })
+    .key(function(d){ return d.y + ε*d.x })
     .order()
 
   intersections = []
@@ -119,7 +119,7 @@ function calcQueue(){
   statusT = tree([])
 
 
-  for (var i = 0; i < queue.length; i++){
+  for (var i = 0; i < queue.length && i < 1000; i++){
     var d = queue[i]
     var y = d.y
     if (d.line && d.line[0] == d){
@@ -162,7 +162,6 @@ function calcQueue(){
       if (i.isIntersection) intersections.push(i) && queue.insert(i)
     }
   }
-
 
 
 }
