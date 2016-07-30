@@ -15,4 +15,34 @@ function dist(a, b){
 }
 
 
-function toPathStr(d){ return 'M' + d.join('L') }
+function pathStr(d){ return 'M' + d.join('L') }
+
+function clamp(a,b,c){ return Math.max(a, Math.min(b, c)) }
+
+
+//intersection between lines connecting points [a, b] and [c, d]
+function intersection(l0, l1){
+  var ax = l0[0][0], ay = l0[0][1],
+      bx = l0[1][0], by = l0[1][1],
+      cx = l1[0][0], cy = l1[0][1],
+      dx = l1[1][0], dy = l1[1][1],
+
+      det = (ax - bx)*(cy - dy) 
+          - (ay - by)*(cx - dx),
+
+      l = ax*by - ay*bx,
+      m = cx*dy - cy*dx,
+
+      ix = (l*(cx - dx) - m*(ax - bx))/det,
+      iy = (l*(cy - dy) - m*(ay - by))/det,
+      i = [ix, iy]
+
+  i.isOverlap = (ix == ax && iy == ay) || (ix == bx && iy == by)
+
+  i.isIntersection = !(ax < ix ^ ix < bx) 
+                  && !(cx < ix ^ ix < dx)
+                  && !i.isOverlap
+                  && det
+
+  return i
+}

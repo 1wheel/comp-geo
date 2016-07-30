@@ -1,6 +1,6 @@
 // adapted from topojson
 
-module.exports = function(compare) {
+function heap(compare) {
   var heap = {},
       array = [];
 
