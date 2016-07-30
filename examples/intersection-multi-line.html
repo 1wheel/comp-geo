@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<style>
+body{
+  max-width: 900px;
+  margin: 0px auto;
+  font-family: monospace;
+  background: black;
+}
+
+.point{
+  stroke: #fff;
+  fill: #fff;
+  cursor: pointer;
+}
+
+.line{
+  stroke: #fff;
+}
+
+.intersection{
+}
+
+svg{
+  /*border: 1px solid #ccc;*/
+  overflow: visible;
+}
+</style>
+
+
+<body>
+  <div id='graph'></div>
+</body>
+
+<script src="../libs/d3v4+jetpack.js"></script>
+<script src="../libs/heap.js"></script>
+<script src="../libs/lodash.js"></script>
+<script src="../libs/buckets.js"></script>
+
+<script src='../geometry.js'></script>
+
+
+<script>
+
+var width = 960, height = 500, ε = 1e-9, ƒ = d3.f, r = 10;
+
+var drag = d3.drag().on('drag', function(d){
+  d[0] = Math.round(clamp(r, d3.event.x, width - r))
+  d[1] = Math.round(clamp(r, d3.event.y, height - r))
+  render()
+})
+
+
+var svg = d3.select('#graph').append('svg')
+    .at({width, height})
+
+//copy(JSON.stringify(lines, null, 0))
+var lines = [[[704,183],[108,110]],[[163,303],[553,381]],[[354,439],[542,69]],[[224,206],[446,38]]]
+
+var lineSel = svg.appendMany(lines, 'path.line')
+    
+var circleSel = svg.appendMany(_.flatten(lines, true), 'circle.point')
+    .at({r})
+    .call(drag)
+
+var intersectionSel = svg.append('circle')
+    .at({fill: 'none', r: r/2, 'stroke-width': 2})
+
+function render(){
+  lineSel.at('d', pathStr)
+  circleSel.translate(ƒ())
+
+  var i = intersection(lines[0], lines[1])
+  intersectionSel
+      .translate(i)
+      .at({stroke: i.isIntersection ? '#0f0' : '#ccc'})
+
+  allIntersections(lines)
+}
+render()
+
+function allIntersections(lines){
+  var tree = buckets.BSTree(function(a, b){ return a[0] - b[0] || a[1] - b[1] })
+
+  lines.forEach(tree.add)
+
+  var queue = buckets.PriorityQueue(function(a, b){ return a[1] - b[1] })
+}
+
+</script>
