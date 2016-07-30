@@ -46,3 +46,48 @@ function intersection(l0, l1){
 
   return i
 }
+
+
+function lineXatY(l, y){
+  var a = l[0], b = l[1],
+      m = (a.y - b.y)/(a.x - b.x)
+
+  return (y - a.y + m*a.x)/m 
+}
+
+
+
+
+function tree(key){
+  key = key || function(d){ return d }
+  var bisect = d3.bisector(function(d){ return key(d) }).left
+
+  var array = []
+
+  array.insert = function(d){
+    var i = array.findIndex(d)
+    var val = key(d)
+    if (array[i] && val == key(array[i])) return // don't add dupes
+    array.splice(i, 0, d)
+  }
+
+  array.remove = function(d){
+    var i = array.findIndex(d)
+    array.splice(i, 1)
+  }
+
+  array.swap = function(a, b){
+    var i = array.findIndex(a)
+    var j = array.findIndex(b)
+    array[i] = b
+    array[j] = a
+  }
+
+  array.popSmallest = function(){
+    
+  }
+
+  array.findIndex = function(d){ return bisect(array, key(d)) }
+
+  return array
+}
