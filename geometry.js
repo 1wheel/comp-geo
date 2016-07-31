@@ -49,10 +49,12 @@ function intersection(l0, l1){
 
 
 function lineXatY(l, y){
-  var a = l[0], b = l[1],
-      m = (a.y - b.y)/(a.x - b.x)
+  var ax = l[0][0], ay = l[0][1],
+      bx = l[1][0], by = l[1][1],
 
-  return (y - a.y + m*a.x)/m 
+      m = (ay - by)/(ax - bx)
+
+  return (y - ay + m*ax)/m 
 }
 
 
