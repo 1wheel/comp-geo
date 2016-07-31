@@ -64,7 +64,7 @@ var circleSel = svg.appendMany(_.flatten(lines, true), 'circle.point')
     .at({r})
     .call(drag)
 
-var intersectionSel = svg.append('circle')
+var intersectionSel = svg.append('circle.intersection')
     .at({fill: 'none', r: r/2, 'stroke-width': 2})
 
 function render(){
@@ -76,18 +76,20 @@ function render(){
       .translate(i)
       .at({stroke: i.isIntersection ? '#0f0' : '#ccc'})
 
-  allIntersections(lines)
+  var intersections = allIntersections(lines)
+  d3.selectAll('.intersection').remove()
+
+  svg.appendMany(intersections, 'circle.intersection')
+      .at({fill: 'none', r: r/2, 'stroke-width': 2, stroke: '#0f0'})
+      .translate(ƒ())
+
+  console.log(intersections)
 }
 render()
 
 function allIntersections(lines){
-  // var segmentOrder = tree(function(a, b){ return a[0] - b[0] || a[1] - b[1] })
-  segmentOrder = tree(function(e){ return lineXatY(e, d[1]) })
-
-  // lines.forEach(tree.add)
-
   function ySlant(d){ return d.p[1] + ε*d.p[0] }
-  eventQueue = tree(ySlant)
+  var eventQueue = tree(ySlant)
   lines.forEach(function(d){
     var isSorted = d[0][1] - d[1][1] || d[0][0] - d[1][0]
     var p0 = isSorted < 0 ? d[0] : d[1]
@@ -104,8 +106,61 @@ function allIntersections(lines){
       type: 'remove',
       line: d
     })
-
   })
+
+  var curEvent;
+  var intersections = []
+  var segmentOrder = tree(function(d){ return lineXatY(d, curEvent.p[1]) })
+
+
+  for (; curEvent = eventQueue.popSmallest(); curEvent){
+    if (curEvent.type == 'insert'){
+      segmentOrder.insert(curEvent.line)
+
+      segmentOrder.neighbors(curEvent.line).forEach(function(d){
+        checkForIntersection(curEvent.line, d)
+      }) 
+    }
+
+    if (curEvent.type == 'remove'){
+      checkForIntersection.apply(null, segmentOrder.neighbors(curEvent.line))
+
+      segmentOrder.remove(curEvent.line)
+    }
+
+    if (curEvent.type == 'intersect'){
+      segmentOrder.swap(curEvent.p.lines[0], curEvent.p.lines[1])
+
+      segmentOrder.neighbors(curEvent.p.lines[0]).forEach(function(d){
+        if (d == curEvent.p.lines[1]) return
+        checkForIntersection(curEvent.p.lines[0], d)
+      }) 
+      segmentOrder.neighbors(curEvent.p.lines[1]).forEach(function(d){
+        if (d == curEvent.p.lines[0]) return
+        checkForIntersection(curEvent.p.lines[1], d)
+      }) 
+
+    }
+  // console.log(segmentOrder.length)
+  }
+
+  function checkForIntersection(a, b){
+    if (!a || !b) return
+
+    var i = intersection(a, b)
+    if (!i.isIntersection) return
+    i.lines = [a, b]
+
+    eventQueue.insert({
+      p: i,
+      type: 'intersect',
+    })
+
+    intersections.push(i)
+  }
+
+  return intersections
+
 }
 
 </script>

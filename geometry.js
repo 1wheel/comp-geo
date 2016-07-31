@@ -84,8 +84,13 @@ function tree(key){
   }
 
   array.popSmallest = function(){
-    
+    return array.shift()
   }
+
+  array.neighbors= function(d){
+    var i = array.findIndex(d)
+    return [array[i - 1], array[i + 1]]
+  } 
 
   array.findIndex = function(d){ return bisect(array, key(d)) }
 
