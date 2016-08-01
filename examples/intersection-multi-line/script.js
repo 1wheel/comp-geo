@@ -6,11 +6,14 @@ var drag = d3.drag().on('drag', function(d){
   render()
 })
 
+var canvas = d3.select('#graph').html('')
+  .append('canvas')
+    .at({width, height}).node()
 
-var svg = d3.select('#graph').append('svg')
-    .at({width, height})
+var ctx = canvas.getContext('2d')
+ctx.fillStyle = '#0f0'
 
-var lines = d3.range(100).map(function(d){
+var lines = d3.range(50).map(function(d){
   return [
     [Math.random()*width, Math.random()*height],
     [Math.random()*width, Math.random()*height]]
@@ -18,41 +21,60 @@ var lines = d3.range(100).map(function(d){
 
 var points = _.flatten(lines, true)
 points.forEach(function(d){
-  d.dx = Math.random()*3
-  d.dy = Math.random()*3
+  d.dx = Math.random()*1
+  d.dy = Math.random()*1
 })
 
-var lineSel = svg.appendMany(lines, 'path.line')
-    .st({stroke: ƒ('color')})
-    
-var circleSel = svg.appendMany(points, 'circle.point')
-    .at({r})
-    .call(drag)
+var color = d3.scaleSequential(d3.interpolateRainbow)
+  .domain([0, 80])
 
-var intersectionSel = svg.appendMany([], 'circle.intersection')
+
+
+
+
 
 function render(){
-  lineSel.at('d', pathStr)
-  circleSel.translate(ƒ())
-
   var intersections = allIntersections(lines)
-  
-  // d3.selectAll('.intersection').remove()
-  // svg.appendMany(intersections, 'circle.intersection')
-  //     .at({fill: 'none', r: r/2, 'stroke-width': 2, stroke: '#0f0'})
-  //     .translate(ƒ())
 
-  intersectionSel = svg.selectAll('.intersection').data(intersections)
-  intersectionSel.enter().append('circle.intersection')
-      .at({fill: 'none', r: r/2, 'stroke-width': 2, stroke: '#0f0'})
-    .merge(intersectionSel)
-      .translate(ƒ())
-      .at({stroke: 'pink'})
-  intersectionSel.exit().remove()
+  lines.forEach(function(d){ d.count = 0 })
+  intersections.forEach(function(i){ i.lines[0].count++, i.lines[1].count++ })
+
+  // color.domain([t])
+  // ctx.fillStyle = 'rgba(0, 0, 0, .02)'
+  // ctx.fillRect(0, 0, width, height)
+
+  ctx.beginPath()
+  lines.forEach(function(d){
+    if (d.count < 10) return
+    ctx.moveTo(d[0][0],    d[0][1])
+    ctx.lineTo(d[1][0],    d[1][1])
+  })
+  ctx.strokeStyle = 'rgba(0,0,0,.2)'
+  ctx.lineWidth = 1
+  ctx.stroke()
+
+
+  // ctx.clearRect(0, 0, width, height)
+  intersections.forEach(function(i){  
+    var s = (i.lines[0].count + i.lines[1].count)/40
+
+    s = i.lines[0].count/30
+    s = Math.max(i.lines[0].count, i.lines[1].count)/10
+
+    ctx.beginPath()
+    ctx.fillStyle = color(s*10)
+    s = clamp(0, s, 1)
+    if (s < 1) s = 1, ctx.fillStyle = '#000'
+    ctx.moveTo(i[0] + s, i[1]);
+    ctx.arc(i[0], i[1], s, 0, 2 * Math.PI);
+    ctx.fill()
+  })
+
 }
 render()
 
-d3.timer(function(){
+if (window.timer) timer.stop()
+window.timer = d3.timer(function(t){
   // return
   points.forEach(function(d){
     d[0] += d.dx
