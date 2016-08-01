@@ -1,4 +1,4 @@
-var width = 960, height = 500, ε = 1e-9, ƒ = d3.f, r = 2;
+var width = innerWidth, height = innerHeight, ε = 1e-9, ƒ = d3.f, r = 2;
 
 var drag = d3.drag().on('drag', function(d){
   d[0] = Math.round(clamp(r, d3.event.x, width - r))
