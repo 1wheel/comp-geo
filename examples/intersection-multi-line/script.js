@@ -47,7 +47,7 @@ function render(){
       .at({fill: 'none', r: r/2, 'stroke-width': 2, stroke: '#0f0'})
     .merge(intersectionSel)
       .translate(ƒ())
-      .at({stroke: 'yellow'})
+      .at({stroke: 'pink'})
   intersectionSel.exit().remove()
 }
 render()
@@ -108,14 +108,6 @@ function allIntersections(lines){
     }
 
     if (curEvent.type == 'intersect'){
-
-      // segmentOrder.swap(curEvent.p.lines[0], curEvent.p.lines[1])
-      // segmentOrder.remove(curEvent.p.lines[0])
-      // segmentOrder.remove(curEvent.p.lines[1])
-      // curY += ε
-      // segmentOrder.insert(curEvent.p.lines[0])
-      // segmentOrder.insert(curEvent.p.lines[1])
-
       segmentOrder.swap(curEvent.p.lines[0], curEvent.p.lines[1])
 
       curY += ε
@@ -151,12 +143,4 @@ function allIntersections(lines){
 
   return intersections
 }
-
-
-
-
-var t = tree()
-
-t.insert(10)
-t.insert(12)
 

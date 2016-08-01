@@ -47,7 +47,6 @@ function intersection(l0, l1){
   return i
 }
 
-
 function lineXatY(l, y){
   var ax = l[0][0], ay = l[0][1],
       bx = l[1][0], by = l[1][1],
