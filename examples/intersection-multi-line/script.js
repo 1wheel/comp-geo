@@ -1,4 +1,4 @@
-var width = 960, height = 500, ε = 1e-9, ƒ = d3.f, r = 10;
+var width = 960, height = 500, ε = 1e-9, ƒ = d3.f, r = 2;
 
 var drag = d3.drag().on('drag', function(d){
   d[0] = Math.round(clamp(r, d3.event.x, width - r))
@@ -10,40 +10,62 @@ var drag = d3.drag().on('drag', function(d){
 var svg = d3.select('#graph').append('svg')
     .at({width, height})
 
-//copy(JSON.stringify(lines, null, 0))
-// var lines = [[[163,378],[398,198]],[[354,439],[551,72]]]
-var lines = [[[163,378],[650,134]],[[354,439],[551,72]]]
-var lines = [[[704,183],[108,110]],[[163,303],[553,381]],[[354,439],[542,69]],[[224,206],[446,38]]]
-var lines = [[[163,378],[576,244]],[[354,439],[551,72]],[[386,132],[522,26]]]
-var lines = [[[318,399],[585,221]],[[394,454],[527,106]],[[620,479],[365,106]]]
-;['steelblue', 'yellow', 'pink'].forEach(function(d, i){
-  if (lines[i]) lines[i].color = d
+var lines = d3.range(100).map(function(d){
+  return [
+    [Math.random()*width, Math.random()*height],
+    [Math.random()*width, Math.random()*height]]
+})
+
+var points = _.flatten(lines, true)
+points.forEach(function(d){
+  d.dx = Math.random()*3
+  d.dy = Math.random()*3
 })
 
 var lineSel = svg.appendMany(lines, 'path.line')
     .st({stroke: ƒ('color')})
     
-var circleSel = svg.appendMany(_.flatten(lines, true), 'circle.point')
+var circleSel = svg.appendMany(points, 'circle.point')
     .at({r})
     .call(drag)
+
+var intersectionSel = svg.appendMany([], 'circle.intersection')
 
 function render(){
   lineSel.at('d', pathStr)
   circleSel.translate(ƒ())
 
   var intersections = allIntersections(lines)
-  d3.selectAll('.intersection').remove()
-  svg.appendMany(intersections, 'circle.intersection')
+  
+  // d3.selectAll('.intersection').remove()
+  // svg.appendMany(intersections, 'circle.intersection')
+  //     .at({fill: 'none', r: r/2, 'stroke-width': 2, stroke: '#0f0'})
+  //     .translate(ƒ())
+
+  intersectionSel = svg.selectAll('.intersection').data(intersections)
+  intersectionSel.enter().append('circle.intersection')
       .at({fill: 'none', r: r/2, 'stroke-width': 2, stroke: '#0f0'})
+    .merge(intersectionSel)
       .translate(ƒ())
+      .at({stroke: 'yellow'})
+  intersectionSel.exit().remove()
 }
 render()
 
-function allIntersections(lines){
-  console.log('STARTING CALC')
+d3.timer(function(){
+  // return
+  points.forEach(function(d){
+    d[0] += d.dx
+    d[1] += d.dy
+    if (d[0] < 0 && d.dx < 0 || d[0] > width  && d.dx > 0) d.dx = -d.dx
+    if (d[1] < 0 && d.dy < 0 || d[1] > height && d.dy > 0) d.dy = -d.dy
+  })
 
-  function ySlant(d){ return d.p[1] + ε*d.p[0] }
-  var eventQueue = tree(ySlant)
+  render()
+})
+
+function allIntersections(lines){
+  var eventQueue = tree(function(d){ return d.p[1] + ε*d.p[0] })
   lines.forEach(function(d){
     var isSorted = d[0][1] - d[1][1] || d[0][0] - d[1][0]
     var p0 = isSorted < 0 ? d[0] : d[1]
@@ -70,7 +92,6 @@ function allIntersections(lines){
   var i = 0
   for (; curEvent = eventQueue.popSmallest(); curEvent && i++ < 10){
     curY = curEvent.p[1] - .5*ε
-    console.log(curEvent.type, segmentOrder.map(ƒ('color')))
 
     if (curEvent.type == 'insert'){
       segmentOrder.insert(curEvent.line)
@@ -108,14 +129,11 @@ function allIntersections(lines){
       }) 
     }
 
-    console.log(curEvent.line.color, segmentOrder.map(ƒ('color')))
-    console.log('\n')
 
   }
 
   function checkForIntersection(a, b){
     if (!a || !b) return
-    // console.log(a.color, b.color)
     // if (a == b) debugger
 
     var i = intersection(a, b)
