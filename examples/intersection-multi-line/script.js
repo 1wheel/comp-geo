@@ -1,37 +1,6 @@
-var width = innerWidth, height = innerHeight, ε = 1e-9, ƒ = d3.f, r = 2;
-
-var drag = d3.drag().on('drag', function(d){
-  d[0] = Math.round(clamp(r, d3.event.x, width - r))
-  d[1] = Math.round(clamp(r, d3.event.y, height - r))
-  render()
-})
-
-var canvas = d3.select('#graph').html('')
-  .append('canvas')
-    .at({width, height}).node()
-
-var ctx = canvas.getContext('2d')
-ctx.fillStyle = '#0f0'
-
-var lines = d3.range(50).map(function(d){
-  return [
-    [Math.random()*width, Math.random()*height],
-    [Math.random()*width, Math.random()*height]]
-})
-
-var points = _.flatten(lines, true)
-points.forEach(function(d){
-  d.dx = Math.random()*1
-  d.dy = Math.random()*1
-})
 
 var color = d3.scaleSequential(d3.interpolateRainbow)
   .domain([0, 80])
-
-
-
-
-
 
 function render(){
   var intersections = allIntersections(lines)
@@ -40,21 +9,19 @@ function render(){
   intersections.forEach(function(i){ i.lines[0].count++, i.lines[1].count++ })
 
   // color.domain([t])
-  // ctx.fillStyle = 'rgba(0, 0, 0, .02)'
-  // ctx.fillRect(0, 0, width, height)
+  ctx.fillStyle = 'rgba(0, 0, 0, .01)'
+  ctx.fillRect(0, 0, width, height)
 
   ctx.beginPath()
   lines.forEach(function(d){
-    if (d.count < 10) return
+    // if (d.count < 10) return
     ctx.moveTo(d[0][0],    d[0][1])
     ctx.lineTo(d[1][0],    d[1][1])
   })
-  ctx.strokeStyle = 'rgba(0,0,0,.2)'
+  ctx.strokeStyle = 'rgba(0,255,0,.01)'
   ctx.lineWidth = 1
   ctx.stroke()
 
-
-  // ctx.clearRect(0, 0, width, height)
   intersections.forEach(function(i){  
     var s = (i.lines[0].count + i.lines[1].count)/40
 
@@ -66,7 +33,7 @@ function render(){
     s = clamp(0, s, 1)
     if (s < 1) s = 1, ctx.fillStyle = '#000'
     ctx.moveTo(i[0] + s, i[1]);
-    ctx.arc(i[0], i[1], s, 0, 2 * Math.PI);
+    ctx.arc(i[0], i[1], 1, 0, 2 * Math.PI);
     ctx.fill()
   })
 
@@ -75,7 +42,6 @@ render()
 
 if (window.timer) timer.stop()
 window.timer = d3.timer(function(t){
-  // return
   points.forEach(function(d){
     d[0] += d.dx
     d[1] += d.dy
@@ -148,7 +114,6 @@ function allIntersections(lines){
 
   function checkForIntersection(a, b){
     if (!a || !b) return
-    // if (a == b) debugger
 
     var i = intersection(a, b)
     if (!i.isIntersection || i[1] < curY) return

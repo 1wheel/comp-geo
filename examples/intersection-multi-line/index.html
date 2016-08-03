@@ -1,34 +1,8 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 
-<style>
-body{
-  background: black;
-  margin: 0px;
-  overflow: hidden;
-}
+<link type='text/css' rel='stylesheet' href='style.css'>
 
-.point{
-  stroke: #fff;
-  fill: #fff;
-  cursor: pointer;
-  display: none;
-
-}
-
-.line{
-  stroke: #fff;
-  display: none;
-}
-
-.intersection{
-}
-
-svg{
-  /*border: 1px solid #ccc;*/
-  overflow: visible;
-}
-</style>
 
 
 <body>
@@ -41,6 +15,28 @@ svg{
 
 <script src='../../geometry.js'></script>
 
+<script>
+var width = innerWidth, height = innerHeight, ε = 1e-9, ƒ = d3.f, r = 2
+
+var canvas = d3.select('#graph').html('')
+  .append('canvas')
+    .at({width, height}).node()
+
+var ctx = canvas.getContext('2d')
+ctx.fillStyle = '#0f0'
+
+var lines = d3.range(50).map(function(d){
+  return [
+    [Math.random()*width, Math.random()*height],
+    [Math.random()*width, Math.random()*height]]
+})
+
+var points = _.flatten(lines, true)
+points.forEach(function(d){
+  d.dx = Math.random()*1
+  d.dy = Math.random()*1
+})
+</script>
 
 <script src='script.js'></script>
 
