@@ -18,7 +18,7 @@ function render(){
     ctx.moveTo(d[0][0],    d[0][1])
     ctx.lineTo(d[1][0],    d[1][1])
   })
-  ctx.strokeStyle = 'rgba(0,255,0,.01)'
+  ctx.strokeStyle = 'rgba(0,0,0,.1)'
   ctx.lineWidth = 1
   ctx.stroke()
 
