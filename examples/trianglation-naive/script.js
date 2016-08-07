@@ -31,10 +31,9 @@ function render(){
   polygonSel.at('d', pathStr)
 
   triangles = triangulateNaive(points.slice())
-  console.log(triangles)
 
   triangleSel.html('').appendMany(triangles, 'path')
-      .at({d: pathStr, stroke: 'black', fill: color, 'stroke-width': 3})
+      .at({d: pathStr, stroke: 'black', fill: function(d, i){ return color(i) }, 'stroke-width': 3})
 }
 render()
 
