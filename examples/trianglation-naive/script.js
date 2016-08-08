@@ -46,7 +46,15 @@ function triangulateNaive(pts){
     var lI = mod(mI - 1, pts.length)
     var rI = mod(mI + 1, pts.length)
 
-    triangles.push([pts[lI], pts[mI], pts[rI]])
+    var triangle = [pts[lI], pts[mI], pts[rI]]
+    var insideTriangle = pts.filter(function(d){
+      return d3.polygonContains(triangle, d)
+    })
+
+    console.log(insideTriangle.length)
+    if (insideTriangle.length) triangle[1] = insideTriangle[0]
+
+    triangles.push(triangle)
     pts.splice(mI, 1)
   }
 
