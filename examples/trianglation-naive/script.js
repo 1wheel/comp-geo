@@ -12,7 +12,8 @@ var svg = d3.select('#graph').html('').append('svg')
 
 //copy(JSON.stringify(points))
 var points = [[320,316],[533,120],[309,236],[86,113],[194,241],[164,349],[465,348],[597,192]]
-    
+var points = [[320,316],[533,120],[309,236],[354,115],[194,241],[164,349],[465,348],[597,192]]
+
 var polygonSel = svg.append('path')
     .datum(points)
     .at('fill-opacity', .1)
@@ -41,7 +42,7 @@ render()
 function triangulateNaive(pts){
   var triangles = []
 
-  while(pts.length > 2){
+  while(pts.length > 6){
     var mI = d3.scan(pts, function(a, b){ return a[0] - b[0] })
     var lI = mod(mI - 1, pts.length)
     var rI = mod(mI + 1, pts.length)
@@ -50,8 +51,9 @@ function triangulateNaive(pts){
     var insideTriangle = pts.filter(function(d){
       return d3.polygonContains(triangle, d)
     })
+    console.log(lI, mI, rI)
 
-    console.log(insideTriangle.length)
+    // console.log(insideTriangle.length)
     if (insideTriangle.length) triangle[1] = insideTriangle[0]
 
     triangles.push(triangle)
