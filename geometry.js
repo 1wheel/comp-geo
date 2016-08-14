@@ -15,6 +15,21 @@ function dist(a, b){
 }
 
 
+//distance from a point to a line 
+//https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+function distPointToLine(p, l){
+  var x0 = p[0],    y0 = p[1], 
+      x1 = l[0][0], y1 = l[0][1], 
+      x2 = l[1][0], y2 = l[1][1]
+
+  return Math.abs(
+        (y2 - y1)*x0 
+      - (x2 - x1)*y0 
+      +  x2*y1 - y2*x1
+    )/dist(l[0], l[1])
+}
+
+
 function pathStr(d){ return 'M' + d.join('L') }
 
 function clamp(a,b,c){ return Math.max(a, Math.min(b, c)) }

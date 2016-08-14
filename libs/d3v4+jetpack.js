@@ -15755,6 +15755,11 @@ var   y0$3;
     return s;
   };
 
+  function selectAppend(name) {
+    var s = this.select(name)
+    return s.size() ? s : this.append(name)
+  };
+
   function tspans(lines, lh) {
     return this.selectAll('tspan')
         .data(lines).enter()
@@ -15770,7 +15775,9 @@ var   y0$3;
 
   function at(name, value) {
     if (typeof(name) == 'object'){
-      for (var key in name) { this.attr(key.replace('_', '-'), name[key]) }
+      for (var key in name){
+        this.attr(key.replace(/([a-z\d])([A-Z])/g, '$1-$2').toLowerCase(), name[key]) 
+      }
       return this
     } else{
       return arguments.length == 1 ? this.attr(name) : this.attr(name, value)
@@ -15779,7 +15786,9 @@ var   y0$3;
 
   function st(name, value) {
     if (typeof(name) == 'object'){
-      for (var key in name) { this.style(key.replace('_', '-'), name[key]) }
+      for (var key in name){
+        this.style(key.replace(/([a-z\d])([A-Z])/g, '$1-$2').toLowerCase(), name[key]) 
+      }
       return this
     } else{
       return arguments.length == 1 ? this.style(name) : this.style(name, value)
@@ -15946,6 +15955,7 @@ var   y0$3;
 
   selection.prototype.translate = translateSelection
   selection.prototype.append = append
+  selection.prototype.selectAppend = selectAppend
   selection.prototype.tspans = tspans
   selection.prototype.appendMany = appendMany
   selection.prototype.at = at
