@@ -35,8 +35,7 @@ function render(){
 
   polygonSel.at('d', pathStr)
 
-  lines = triangulateNaive(points.slice(), 1).filter(function(d){ return d.join })
-
+  lines = triangulateNaive(points.slice(), 1)
   lineSel.html('').appendMany(lines, 'path')
       .at({d: pathStr, stroke: 'black', strokeWidth: 3, fillOpacity: .4})
 }
@@ -48,9 +47,7 @@ function triangulateNaive(pts, k){
   var mI = d3.scan(pts, function(a, b){ return a[0] - b[0] })
   var lI = mod(mI - 1, pts.length)
   var rI = mod(mI + 1, pts.length)
-  if (k > 10){
-    return [[]];
-  }
+  if (k > 10){ return [[]]; }
 
   var triangle = [pts[lI], pts[mI], pts[rI]]
   var insideTriangle = pts.filter(function(d, i){
@@ -59,38 +56,29 @@ function triangulateNaive(pts, k){
 
   if (insideTriangle.length){
     var minTriangle = d3.scan(insideTriangle, function(a, b){
-      // console.log(distPointToLine(d, [pts[lI], pts[rI]]))
       return  distPointToLine(a, [pts[lI], pts[rI]]) 
             - distPointToLine(b, [pts[lI], pts[rI]])
     })  
 
-
-    console.log(minTriangle)
-
     lI = mI
-    rI = pts.indexOf(triangle[minTriangle])
-    rI = pts.indexOf(triangle[0])
+    rI = pts.indexOf(insideTriangle[minTriangle])
   } 
 
   var lines = [[pts[lI], pts[rI]]] 
   var poly0 = [pts[lI]]
   var i = lI
-  var j = 0
-  while (i != rI && j++ < 10){
+  while (i != rI){
     i = mod(i + 1, pts.length)
     poly0.push(pts[i])
   }
 
   var poly1 = [pts[lI]]
   var i = lI
-  var j = 0
-  while (i != rI && j++ < 10){
+  while (i != rI){
     i = mod(i - 1, pts.length)
     poly1.push(pts[i])
   }
 
-  console.log(poly0.length, poly1.length)
-  // console.log(lI, rI)
   lines = poly0.length > 3 ? lines.concat(triangulateNaive(poly0, k + 1)) : lines
   lines = poly1.length > 3 ? lines.concat(triangulateNaive(poly1, k + 1)) : lines
 
