@@ -1,4 +1,4 @@
-var width = 960, height = 500, ε = 1e-9, ƒ = d3.f, r = 10;
+var width = 960, height = 500, ε = 1e-9, ƒ = d3.f, r = 6;
 
 var drag = d3.drag().on('drag', function(d){
   d[0] = Math.round(clamp(r, d3.event.x, width - r))
@@ -9,12 +9,12 @@ var drag = d3.drag().on('drag', function(d){
 var svg = d3.select('#graph').html('').append('svg').at({width, height})
 svg.append('rect').at({width, height, fill: 'none'})
 svg.on('click', function(){
-  points.push([d3.event.x, d3.event.y])
+  // points.push([d3.event.x, d3.event.y])
   render()
 })
 
 //copy(JSON.stringify(points))
-var points = [[320,316],[533,120],[309,236],[86,113],[194,241],[148,401],[465,340],[597,192]]
+var points = [[810,244],[707,30],[467,248],[183,49],[59,270],[148,436],[392,356],[702,409]]
 
 points.forEach(function(d, i){ d.i = i })
 var polygonSel = svg.append('path')
@@ -24,6 +24,7 @@ var polygonSel = svg.append('path')
 var lineSel = svg.append('g')
 
 var heSel = svg.append('g')
+var mSel = svg.append('g')
 
 var circleSel = svg.append('g')
 
@@ -31,7 +32,7 @@ var color = d3.scaleOrdinal(d3.schemeCategory10);
 
 function render(){
   circleSel.html('').appendMany(points, 'circle.point')
-      .at({r, fillOpacity: 0, stroke: '#555'})
+      .at({r, fillOpacity: 1, stroke: '#555'})
       .call(drag)
       .call(d3.attachTooltip)
       .translate(ƒ())
@@ -42,7 +43,19 @@ function render(){
   dcel = pointsToDCEL(points)
 
   heSel.html('').appendMany(dcel.halfEdges, 'path')
-      .at({d: linkArc, markerMid: 'url(#arrow)', fill: 'none', stroke: '#000'})
+      .at({d: linkArc, fill: 'none', stroke: '#000'})
+      .on('mouseover', function(d){
+        heSel.selectAll('path').classed('active', function(e){ return e == d })
+        heSel.selectAll('path').classed('next', function(e){ return e == d.next })
+        heSel.selectAll('path').classed('prev', function(e){ return e == d.prev })
+        heSel.selectAll('path').classed('twin', function(e){ return e == d.twin })
+        circleSel.selectAll('circle').classed('origin', function(e){ return e == d.origin.pos })
+      })
+  mSel.html('').appendMany(dcel.halfEdges, 'path')
+      .at({d: linkArc, markerMid: 'url(#arrow)', fill: 'none', pointerEvents: 'none'})
+      .st({strokeWidth: 1.5})
+
+
 
 }
 render()
@@ -80,8 +93,8 @@ function pointsToDCEL(pts){
     d.next = outerHE[mod(i - 1, pts.length)]
     d.prev = outerHE[mod(i + 1, pts.length)]
 
-    d.twin = innerHE[i]
-    innerHE[i].twin = d
+    d.twin = innerHE[mod(i - 1, pts.length)]
+    innerHE[mod(i - 1, pts.length)].twin = d
   })
 
   var halfEdges = innerHE.concat(outerHE)
@@ -93,7 +106,6 @@ function pointsToDCEL(pts){
 
 
 function linkArc(d) {
-  console.log(d)
   var dx = d.next.origin.pos[0] - d.origin.pos[0],
       dy = d.next.origin.pos[1] - d.origin.pos[1],
       dr = Math.sqrt(dx * dx + dy * dy);
@@ -108,4 +120,3 @@ svg.append('marker')
     .attr('orient', 'auto')
   .append('path')
     .attr('d', 'M-6.75,-6.75 L 0,0 L -6.75,6.75')
-
