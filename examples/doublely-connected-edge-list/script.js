@@ -14,7 +14,7 @@ svg.on('click', function(){
 })
 
 //copy(JSON.stringify(points))
-var points = [[810,244],[707,30],[467,248],[183,49],[59,270],[148,436],[392,356],[702,409]]
+var points = [[545,288],[707,30],[328,176],[183,49],[59,270],[148,436],[306,345],[702,409]]
 
 points.forEach(function(d, i){ d.i = i })
 var polygonSel = svg.append('path')

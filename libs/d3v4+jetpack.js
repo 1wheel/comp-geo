@@ -1643,8 +1643,13 @@ var   tau$1 = 2 * pi$1;
   };
 
   function poke(q) {
-    if (!q._start) try { start(q); } // let the current task complete
-    catch (e) { if (q._tasks[q._ended + q._active - 1]) abort(q, e); } // task errored synchronously
+    if (!q._start) {
+      try { start(q); } // let the current task complete
+      catch (e) {
+        if (q._tasks[q._ended + q._active - 1]) abort(q, e); // task errored synchronously
+        else if (!q._data) throw e; // await callback errored synchronously
+      }
+    }
   }
 
   function start(q) {
@@ -1686,8 +1691,10 @@ var   tau$1 = 2 * pi$1;
     while (--i >= 0) {
       if (t = q._tasks[i]) {
         q._tasks[i] = null;
-        if (t.abort) try { t.abort(); }
-        catch (e) { /* ignore */ }
+        if (t.abort) {
+          try { t.abort(); }
+          catch (e) { /* ignore */ }
+        }
       }
     }
 
@@ -1696,7 +1703,11 @@ var   tau$1 = 2 * pi$1;
   }
 
   function maybeNotify(q) {
-    if (!q._active && q._call) q._call(q._error, q._data);
+    if (!q._active && q._call) {
+      var d = q._data;
+      q._data = undefined; // allow gc
+      q._call(q._error, d);
+    }
   }
 
   function queue(concurrency) {
@@ -2887,7 +2898,7 @@ var   tau$1 = 2 * pi$1;
     lineEnd: function() {
       switch (this._point) {
         case 2: this._context.lineTo(this._x2, this._y2); break;
-        case 3: this.point(this, this._x2, this._y2); break;
+        case 3: this.point(this._x2, this._y2); break;
       }
       if (this._line || (this._line !== 0 && this._point === 1)) this._context.closePath();
       this._line = 1 - this._line;
@@ -4912,9 +4923,7 @@ var   tau$1 = 2 * pi$1;
   var clockNow = 0;
   var clockSkew = 0;
   var clock = typeof performance === "object" && performance.now ? performance : Date;
-  var setFrame = typeof requestAnimationFrame === "function"
-          ? (clock === Date ? function(f) { requestAnimationFrame(function() { f(clock.now()); }); } : requestAnimationFrame)
-          : function(f) { setTimeout(f, 17); };
+  var setFrame = typeof requestAnimationFrame === "function" ? requestAnimationFrame : function(f) { setTimeout(f, 17); };
   function now() {
     return clockNow || (setFrame(clearNow), clockNow = clock.now() + clockSkew);
   }
@@ -4969,8 +4978,8 @@ var   tau$1 = 2 * pi$1;
     --frame;
   }
 
-  function wake(time) {
-    clockNow = (clockLast = time || clock.now()) + clockSkew;
+  function wake() {
+    clockNow = (clockLast = clock.now()) + clockSkew;
     frame = timeout = 0;
     try {
       timerFlush();
@@ -8046,8 +8055,9 @@ var   durationWeek$1 = durationDay$1 * 7;
   var SCHEDULED = 1;
   var STARTING = 2;
   var STARTED = 3;
-  var ENDING = 4;
-  var ENDED = 5;
+  var RUNNING = 4;
+  var ENDING = 5;
+  var ENDED = 6;
 
   function schedule(node, name, id, index, group, timing) {
     var schedules = node.__transition;
@@ -8095,24 +8105,32 @@ var   durationWeek$1 = durationDay$1 * 7;
     schedules[id] = self;
     self.timer = timer(schedule, 0, self.time);
 
-    // If the delay is greater than this first sleep, sleep some more;
-    // otherwise, start immediately.
     function schedule(elapsed) {
       self.state = SCHEDULED;
+      self.timer.restart(start, self.delay, self.time);
+
+      // If the elapsed delay is less than our first sleep, start immediately.
       if (self.delay <= elapsed) start(elapsed - self.delay);
-      else self.timer.restart(start, self.delay, self.time);
     }
 
     function start(elapsed) {
       var i, j, n, o;
 
+      // If the state is not SCHEDULED, then we previously errored on start.
+      if (self.state !== SCHEDULED) return stop();
+
       for (i in schedules) {
         o = schedules[i];
         if (o.name !== self.name) continue;
 
+        // While this element already has a starting transition during this frame,
+        // defer starting an interrupting transition until that transition has a
+        // chance to tick (and possibly end); see d3/d3-transition#54!
+        if (o.state === STARTED) return timeout$1(start);
+
         // Interrupt the active transition, if any.
         // Dispatch the interrupt event.
-        if (o.state === STARTED) {
+        if (o.state === RUNNING) {
           o.state = ENDED;
           o.timer.stop();
           o.on.call("interrupt", node, node.__data__, o.index, o.group);
@@ -8129,12 +8147,13 @@ var   durationWeek$1 = durationDay$1 * 7;
         }
       }
 
-      // Defer the first tick to end of the current frame; see mbostock/d3#1576.
+      // Defer the first tick to end of the current frame; see d3/d3#1576.
       // Note the transition may be canceled after start and before the first tick!
       // Note this must be scheduled before the start event; see d3/d3-transition#16!
       // Assuming this is successful, subsequent callbacks go straight to tick.
       timeout$1(function() {
         if (self.state === STARTED) {
+          self.state = RUNNING;
           self.timer.restart(tick, self.delay, self.time);
           tick(elapsed);
         }
@@ -8158,7 +8177,7 @@ var   durationWeek$1 = durationDay$1 * 7;
     }
 
     function tick(elapsed) {
-      var t = elapsed < self.duration ? self.ease.call(null, elapsed / self.duration) : (self.state = ENDING, 1),
+      var t = elapsed < self.duration ? self.ease.call(null, elapsed / self.duration) : (self.timer.restart(stop), self.state = ENDING, 1),
           i = -1,
           n = tween.length;
 
@@ -8168,12 +8187,17 @@ var   durationWeek$1 = durationDay$1 * 7;
 
       // Dispatch the end event.
       if (self.state === ENDING) {
-        self.state = ENDED;
-        self.timer.stop();
         self.on.call("end", node, node.__data__, self.index, self.group);
-        for (i in schedules) if (+i !== id) return void delete schedules[id];
-        delete node.__transition;
+        stop();
       }
+    }
+
+    function stop() {
+      self.state = ENDED;
+      self.timer.stop();
+      delete schedules[id];
+      for (var i in schedules) return; // eslint-disable-line no-unused-vars
+      delete node.__transition;
     }
   }
 
@@ -14394,107 +14418,95 @@ var   y0$3;
   }
 
   function PathContext(context) {
-    var pointRadius = 4.5;
-
-    var stream = {
-      point: point,
-
-      // While inside a line, override point to moveTo then lineTo.
-      lineStart: function() { stream.point = pointLineStart; },
-      lineEnd: lineEnd,
-
-      // While inside a polygon, override lineEnd to closePath.
-      polygonStart: function() { stream.lineEnd = lineEndPolygon; },
-      polygonEnd: function() { stream.lineEnd = lineEnd; stream.point = point; },
-
-      pointRadius: function(_) {
-        pointRadius = _;
-        return stream;
-      },
-
-      result: noop$2
-    };
-
-    function point(x, y) {
-      context.moveTo(x + pointRadius, y);
-      context.arc(x, y, pointRadius, 0, tau$3);
-    }
-
-    function pointLineStart(x, y) {
-      context.moveTo(x, y);
-      stream.point = pointLine;
-    }
-
-    function pointLine(x, y) {
-      context.lineTo(x, y);
-    }
-
-    function lineEnd() {
-      stream.point = point;
-    }
-
-    function lineEndPolygon() {
-      context.closePath();
-    }
-
-    return stream;
+    this._context = context;
   }
 
-  function PathString() {
-    var pointCircle = circle$2(4.5),
-        string = [];
-
-    var stream = {
-      point: point,
-      lineStart: lineStart,
-      lineEnd: lineEnd,
-      polygonStart: function() {
-        stream.lineEnd = lineEndPolygon;
-      },
-      polygonEnd: function() {
-        stream.lineEnd = lineEnd;
-        stream.point = point;
-      },
-      pointRadius: function(_) {
-        pointCircle = circle$2(_);
-        return stream;
-      },
-      result: function() {
-        if (string.length) {
-          var result = string.join("");
-          string = [];
-          return result;
+  PathContext.prototype = {
+    _radius: 4.5,
+    pointRadius: function(_) {
+      return this._radius = _, this;
+    },
+    polygonStart: function() {
+      this._line = 0;
+    },
+    polygonEnd: function() {
+      this._line = NaN;
+    },
+    lineStart: function() {
+      this._point = 0;
+    },
+    lineEnd: function() {
+      if (this._line === 0) this._context.closePath();
+      this._point = NaN;
+    },
+    point: function(x, y) {
+      switch (this._point) {
+        case 0: {
+          this._context.moveTo(x, y);
+          this._point = 1;
+          break;
+        }
+        case 1: {
+          this._context.lineTo(x, y);
+          break;
+        }
+        default: {
+          this._context.moveTo(x + this._radius, y);
+          this._context.arc(x, y, this._radius, 0, tau$3);
+          break;
         }
       }
-    };
+    },
+    result: noop$2
+  };
 
-    function point(x, y) {
-      string.push("M", x, ",", y, pointCircle);
-    }
-
-    function pointLineStart(x, y) {
-      string.push("M", x, ",", y);
-      stream.point = pointLine;
-    }
-
-    function pointLine(x, y) {
-      string.push("L", x, ",", y);
-    }
-
-    function lineStart() {
-      stream.point = pointLineStart;
-    }
-
-    function lineEnd() {
-      stream.point = point;
-    }
-
-    function lineEndPolygon() {
-      string.push("Z");
-    }
-
-    return stream;
+  function PathString() {
+    this._string = [];
   }
+
+  PathString.prototype = {
+    _circle: circle$2(4.5),
+    pointRadius: function(_) {
+      return this._circle = circle$2(_), this;
+    },
+    polygonStart: function() {
+      this._line = 0;
+    },
+    polygonEnd: function() {
+      this._line = NaN;
+    },
+    lineStart: function() {
+      this._point = 0;
+    },
+    lineEnd: function() {
+      if (this._line === 0) this._string.push("Z");
+      this._point = NaN;
+    },
+    point: function(x, y) {
+      switch (this._point) {
+        case 0: {
+          this._string.push("M", x, ",", y);
+          this._point = 1;
+          break;
+        }
+        case 1: {
+          this._string.push("L", x, ",", y);
+          break;
+        }
+        default: {
+          this._string.push("M", x, ",", y, this._circle);
+          break;
+        }
+      }
+    },
+    result: function() {
+      if (this._string.length) {
+        var result = this._string.join("");
+        this._string = [];
+        return result;
+      }
+    }
+  };
 
   function circle$2(radius) {
     return "m0," + radius
@@ -15603,7 +15615,7 @@ var   y0$3;
   }
 
   stereographicRaw.invert = azimuthalInvert(function(z) {
-    return 2 + atan(z);
+    return 2 * atan(z);
   });
 
   function stereographic() {
@@ -15756,8 +15768,19 @@ var   y0$3;
   };
 
   function selectAppend(name) {
-    var s = this.select(name)
-    return s.size() ? s : this.append(name)
+    var select = selector(name),
+       n = parseAttributes(name), s;
+
+    name = creator(n.tag);
+
+    s = this.select(function() {
+      return select.apply(this, arguments)
+          || this.appendChild(name.apply(this, arguments));
+    });
+
+    //attrs not provided by default in v4
+    for (var key in n.attr) { s.attr(key, n.attr[key]) }
+    return s;
   };
 
   function tspans(lines, lh) {
@@ -15782,39 +15805,6 @@ var   y0$3;
     } else{
       return arguments.length == 1 ? this.attr(name) : this.attr(name, value)
     }
-  };
-
-  function st(name, value) {
-    if (typeof(name) == 'object'){
-      for (var key in name){
-        this.style(key.replace(/([a-z\d])([A-Z])/g, '$1-$2').toLowerCase(), name[key]) 
-      }
-      return this
-    } else{
-      return arguments.length == 1 ? this.style(name) : this.style(name, value)
-    }
-  };
-
-  function wordwrap(line, maxCharactersPerLine) {
-    var w = line.split(' '),
-      lines = [],
-      words = [],
-      maxChars = maxCharactersPerLine || 40,
-      l = 0;
-
-    w.forEach(function(d) {
-      if (l+d.length > maxChars) {
-        lines.push(words.join(' '));
-        words.length = 0;
-        l = 0;
-      }
-      l += d.length;
-      words.push(d);
-    });
-    if (words.length) {
-      lines.push(words.join(' '));
-    }
-    return lines.filter(function(d){ return d != '' });
   };
 
   function f(){
@@ -15845,6 +15835,56 @@ var   y0$3;
     return function(str){
       return typeof(obj[str]) !== undefined ? obj[str] : defaultVal }
   }
+
+  function st(name, value) {
+    if (typeof(name) == 'object'){
+      for (var key in name){
+        addStyle(this, key, name[key])
+      }
+      return this
+    } else{
+      return arguments.length == 1 ? this.style(name) : addStyle(this, name, value)
+    }
+
+
+    function addStyle(sel, style, value){
+      var style = style.replace(/([a-z\d])([A-Z])/g, '$1-$2').toLowerCase()
+
+      var pxStyles = 'top left bottom right padding-top padding-left padding-bottom padding-right border-top b-width border-left-width border-botto-width m border-right-width  margin-top margin-left margin-bottom margin-right font-size width height stroke-width line-height margin padding border max-width min-width'
+
+      if (~pxStyles.indexOf(style) ){
+        sel.style(style, typeof value == 'function' ? f(value, addPx) : addPx(value))
+      } else{
+        sel.style(style, value)
+      }
+
+      return sel
+    } 
+
+    function addPx(d){ return d.match ? d : d + 'px' }
+  };
+
+  function wordwrap(line, maxCharactersPerLine) {
+    var w = line.split(' '),
+      lines = [],
+      words = [],
+      maxChars = maxCharactersPerLine || 40,
+      l = 0;
+
+    w.forEach(function(d) {
+      if (l+d.length > maxChars) {
+        lines.push(words.join(' '));
+        words.length = 0;
+        l = 0;
+      }
+      l += d.length;
+      words.push(d);
+    });
+    if (words.length) {
+      lines.push(words.join(' '));
+    }
+    return lines.filter(function(d){ return d != '' });
+  };
 
   function ascendingKey(key) {
     return typeof key == 'function' ? function (a, b) {
