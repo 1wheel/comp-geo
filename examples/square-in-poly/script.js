@@ -1,4 +1,4 @@
-var width = 960, height = 500, ε = 1e-9, ƒ = d3.f, r = 4, s = 25;
+var width = 960, height = 500, ε = 1e-9, ƒ = d3.f, r = 4, s = 35;
 
 var drag = d3.drag()
   .on('drag', function(d){
@@ -33,7 +33,7 @@ var circleSel = svg.append('g').appendMany(points, 'circle.point')
   .at({r})
 
 var rectPos = [100, 200]
-var n = 5 
+var n = 15 
 var rectPoints = []
 d3.range(n + 1).forEach(function(i){
   d3.range(n + 1).forEach(function(j){
@@ -50,9 +50,25 @@ rectSel.appendMany(rectPoints, 'rect')
   .translate(ƒ())
 
 function render(){
-  strokeColor.domain([0, points.length])
+  rectPoints.forEach(function(d){
+    d.pos = add(d, rectPos)
+    d.isInside = d3.polygonContains(points, d.pos)
+  })
 
-  var isInside = d3.polygonContains(points, rectPos)
+  var isInside = rectPoints.every(ƒ('isInside'))
+  var iDelta = [0, 0]
+  if (!isInside){
+    var insideRect = rectPoints.filter(ƒ('isInside'))
+    if (insideRect.length){
+      iDelta = [d3.sum(insideRect, ƒ(0)), d3.sum(insideRect, ƒ(1))]
+    } else{
+      var closestI = d3.scan(points, function(a, b){
+        return dist(a, rectPos) - dist(b, rectPos)})
+      iDelta = diff(points[closestI], rectPos)
+    }
+
+    iDelta = norm(iDelta)
+  }
 
   rectSel.translate(ƒ())
     .selectAll('rect').at({fill: function(d){
@@ -61,10 +77,29 @@ function render(){
   circleSel.translate(ƒ())
   polygonSel.at('d', pathStr)
 
+  rectPos[0] += iDelta[0]
+  rectPos[1] += iDelta[1]
 }
 render()
-
+if (window.renderTimer) window.renderTimer.stop()
+window.renderTimer = d3.timer(render)
 
 function add(a, b){ 
   return [a[0] + b[0], a[1] + b[1]]
+}
+
+function diff(a, b){
+  return [a[0] - b[0], a[1] - b[1]]
+}
+
+function norm(a){
+  var l = dist(a, [0, 0])
+  return [a[0]/l, a[1]/l]
+}
+
+function dist(a, b){
+  var dx = a[0] - b[0],
+      dy = a[1] - b[1]
+
+  return Math.sqrt(dx*dx + dy*dy)
 }
