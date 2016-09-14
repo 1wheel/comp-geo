@@ -1,0 +1,4 @@
+- check if center is inside polygon
+- check if every point is inside
+- clip rect
+- calc vector to move inside
