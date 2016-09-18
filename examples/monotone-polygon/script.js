@@ -84,7 +84,7 @@ function toMonotone(dcel){
     addIncidentEdgeToTree(ie2.twin)
   
     // console.log('length ', T.length)
-    // console.log.apply(console, ['%c' + T.map(ƒ('origin', 'pos', 'i')).join(',%c ')].concat(T.map(d => 'color: ' + d.origin.pos.color)))
+    console.log.apply(console, ['%c' + T.map(ƒ('origin', 'pos', 'i')).join(',%c ')].concat(T.map(d => 'color: ' + d.origin.pos.color)))
   })
 
   //add incident edge to tree
@@ -92,11 +92,6 @@ function toMonotone(dcel){
     if (!ie.incidentFace.inner) return
     var isBelow = ie.origin.pos[0] >= curY && ie.next.origin.pos[0] >= curY
     isBelow ? T.insert(ie) : T.remove(ie)
-    if (curI == 0){
-      // console.log(isBelow, T.length) 
-      logIE(ie)
-      console.log(T.length, isBelow, T[0] == ie)
-    }
 
   }
 }
@@ -181,6 +176,48 @@ function pointsToDCEL(pts){
   return {vertices, halfEdges, faces}
 }
 
+
+
+
+// need to allow dupes now : /
+function tree(key){
+  key = key || function(d){ return d }
+  var bisect = d3.bisector(function(d){ return key(d) }).left
+
+  var array = []
+
+  array.insert = function(d){
+    var i = array.findIndex(d)
+    var val = key(d)
+    // if (array[i] && val == key(array[i])) return // don't add dupes
+    array.splice(i, 0, d)
+  }
+
+  array.remove = function(d){
+    var i = array.findIndex(d)
+    array.splice(i, 1)
+  }
+
+  array.swap = function(a, b){
+    var i = array.findIndex(a)
+    var j = array.findIndex(b)
+    array[i] = b
+    array[j] = a
+  }
+
+  array.popSmallest = function(){
+    return array.shift()
+  }
+
+  array.neighbors= function(d){
+    var i = array.findIndex(d)
+    return [array[i - 1], array[i + 1]]
+  } 
+
+  array.findIndex = function(d){ return bisect(array, key(d)) }
+
+  return array
+}
 
 
 
