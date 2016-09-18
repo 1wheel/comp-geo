@@ -90,7 +90,8 @@ function toMonotone(dcel){
   //add incident edge to tree
   function addIncidentEdgeToTree(ie){
     if (!ie.incidentFace.inner) return
-    var isBelow = ie.origin.pos[0] >= curY && ie.next.origin.pos[0] >= curY
+    var isBelow = ie.origin.pos[1] >= curY && ie.next.origin.pos[1] >= curY
+    console.log(curY, curI, isBelow)
     isBelow ? T.insert(ie) : T.remove(ie)
 
   }
