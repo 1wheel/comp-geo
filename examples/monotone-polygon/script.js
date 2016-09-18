@@ -1,5 +1,7 @@
 var width = 960, height = 500, ε = 1e-9, ƒ = d3.f, r = 8;
 
+var colors = ['#F44336', '#2196F3', '#4CAF50', '#9C27B0', '#777','#FF9800', '#795548', '#000']
+
 var drag = d3.drag().on('drag', function(d){
   d.pos[0] = Math.round(clamp(r, d3.event.x, width - r))
   d.pos[1] = Math.round(clamp(r, d3.event.y, height - r))
@@ -17,7 +19,10 @@ svg.on('click', function(){
   render()
 })
 
-points.forEach(function(d, i){ d.i = i })
+points.forEach(function(d, i){
+  d.i = i 
+  d.color = colors[i]
+})
 var polygonSel = svg.append('path')
     .datum(points)
     .at('fill-opacity', .1)
@@ -29,30 +34,22 @@ var textSel = svg.append('g')
 
 var color = d3.scaleOrdinal(d3.schemeCategory10);
 
-var strokeColor = d3.scaleLinear().range(['#00f', '#0f0'])
-
 function render(){
   dcel = pointsToDCEL(points)
   toMonotone(dcel)
   addVertexType(dcel)
-
-  strokeColor.domain([0, points.length])
 
   circleSel.html('').appendMany(dcel.vertices, 'circle.point')
       .at({r})
       .call(drag)
       .call(d3.attachTooltip)
       .translate(ƒ('pos'))
-      .st('fill', function(d){ return d.type == 'merge' || d.type == 'split' ? '#c00' : '#000'})
-    //   .at({stroke: ƒ('i', strokeColor), strokeWidth: 1})
-    // .transition().duration(1000).delay(d => 1000*d.i)
-    //   .attr('stroke-width', 10)
-    // .transition()
-    //   .attr('stroke-width', 0)
+      .st({fill: ƒ('pos', 'color')})
 
   textSel.html('').appendMany(dcel.vertices, 'text.point')
       .translate(ƒ('pos'))
       .text(ƒ('type'))
+      .st('fill', function(d){ return d.type == 'merge' || d.type == 'split' ? '#c00' : '#000'})
       .at({textAnchor: 'middle', dy: -10})
 
 
@@ -64,11 +61,40 @@ render()
 
 
 function toMonotone(dcel){
-  var queue = _.sortBy(dcel.vertices, function(d){ return d.pos[1] + ε*d.pos[0] })
+  var Q = _.sortBy(dcel.vertices, function(d){ return d.pos[1] + ε*d.pos[0] })
 
-  queue.forEach((d, i) => d.i = i)
+  Q.forEach((d, i) => d.i = i)
 
+
+  console.log('****STARTING****')
+  var curY;
+  var T = tree(function(d){ return lineXatY([d.origin.pos, d.next.origin.pos], curY) })
+  Q.forEach(function(v){
+    curY = v.pos[1]
+
+    // try to add each inident edge to tree
+    // TODO change to loop so this works after diags have been added
+    var ie = v.incidentEdge
+    addIncidentEdgeToTree(ie)
+    addIncidentEdgeToTree(ie.twin)
+    var ie2 = ie.origin == v ? ie.prev : ie.next
+    addIncidentEdgeToTree(ie2)
+    addIncidentEdgeToTree(ie2.twin)
   
+    console.log('length ', T.length)
+    console.log.apply(console, ['%c' + T.map(ƒ('origin', 'pos', 'i')).join(',%c ')].concat(T.map(d => 'color: ' + d.origin.pos.color)))
+  })
+
+  //add incident edge to tree
+  function addIncidentEdgeToTree(ie){
+    if (!ie.incidentFace.inner) return
+
+    if (ie.origin.pos[0] >= curY && ie.next.origin.pos[0] >= curY){
+      T.insert(ie) }
+    else{
+      T.remove(ie) }
+  }
+
 }
 
 
