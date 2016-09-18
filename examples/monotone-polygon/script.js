@@ -44,7 +44,6 @@ function render(){
       .call(d3.attachTooltip)
       .translate(ƒ('pos'))
       .st('fill', function(d){ return d.type == 'merge' || d.type == 'split' ? '#c00' : '#000'})
-      .st('fill', function(d){ return d.isLeftPoint ? '#00f' : '#0ff' })
     //   .at({stroke: ƒ('i', strokeColor), strokeWidth: 1})
     // .transition().duration(1000).delay(d => 1000*d.i)
     //   .attr('stroke-width', 10)
@@ -83,13 +82,9 @@ function addVertexType(dcel){
     var isAboveL = p[1] < lP[1] || (p[1] == lP[1] && p[0] < lP[0])
     var isAboveR = p[1] < rP[1] || (p[1] == rP[1] && p[0] < rP[0])
     var isLeftPoint = isLeft(lP, p, rP)
-    d.isLeftPoint = isLeftPoint
-    if (p.i == 2){
-      console.log(isLeftPoint, lP.i, p.i, rP.i)
-    }
 
     if (isAboveL && isAboveR){
-      d.type =  !isLeftPoint ? 'start' : 'split'
+      d.type = !isLeftPoint ? 'start' : 'split'
     } else if (!isAboveL && !isAboveR){
       d.type = !isLeftPoint ? 'end' : 'merge'
     } else {
@@ -99,23 +94,14 @@ function addVertexType(dcel){
 
 }
 
+
+
 function isLeft(a, b, c){
   var ax = a[0], ay = a[1],
-      bx = b[0], by = a[1],
+      bx = b[0], by = b[1],
       cx = c[0], cy = c[1]
 
-  var v0 = [ax - bx, ay - by]
-  var v1 = [cx - bx, cy - by]
-
-  var dot = v0[0]*v1[0] + v0[1]*v1[1]
-  var mag = dist(v0, [0,0])*dist(v1, [0,0])
-
-
-  var rv0 = (bx - ax)*(cy - ay) - (by - ay)*(cx - ax) > 0
-  var rv1 = Math.acos(dot/mag) < Math.PI/4
-  return rv1
-
-  return (bx - ax)*(cy - ay) - (by - ay)*(cx - ax) > 0
+  return (b[0] - a[0])*(c[1] - a[1]) - (b[1] - a[1])*(c[0] - a[0]) > 0
 }
 
 
