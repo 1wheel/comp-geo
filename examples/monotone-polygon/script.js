@@ -68,9 +68,11 @@ function toMonotone(dcel){
 
   console.log('****STARTING****')
   var curY;
+  var curI
   var T = tree(function(d){ return lineXatY([d.origin.pos, d.next.origin.pos], curY) })
-  Q.forEach(function(v){
+  Q.forEach(function(v, i){
     curY = v.pos[1]
+    curI = i
 
     // try to add each inident edge to tree
     // TODO change to loop so this works after diags have been added
@@ -81,20 +83,27 @@ function toMonotone(dcel){
     addIncidentEdgeToTree(ie2)
     addIncidentEdgeToTree(ie2.twin)
   
-    console.log('length ', T.length)
-    console.log.apply(console, ['%c' + T.map(ƒ('origin', 'pos', 'i')).join(',%c ')].concat(T.map(d => 'color: ' + d.origin.pos.color)))
+    // console.log('length ', T.length)
+    // console.log.apply(console, ['%c' + T.map(ƒ('origin', 'pos', 'i')).join(',%c ')].concat(T.map(d => 'color: ' + d.origin.pos.color)))
   })
 
   //add incident edge to tree
   function addIncidentEdgeToTree(ie){
     if (!ie.incidentFace.inner) return
+    var isBelow = ie.origin.pos[0] >= curY && ie.next.origin.pos[0] >= curY
+    isBelow ? T.insert(ie) : T.remove(ie)
+    if (curI == 0){
+      // console.log(isBelow, T.length) 
+      logIE(ie)
+      console.log(T.length, isBelow, T[0] == ie)
+    }
 
-    if (ie.origin.pos[0] >= curY && ie.next.origin.pos[0] >= curY){
-      T.insert(ie) }
-    else{
-      T.remove(ie) }
   }
+}
 
+function logIE(ie){
+  var prefix = 'font-weight: bold; color: '
+  console.log('%cF %cT', prefix + ie.origin.pos.color, prefix + ie.next.origin.pos.color)
 }
 
 
