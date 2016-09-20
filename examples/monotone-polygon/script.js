@@ -37,23 +37,25 @@ var color = d3.scaleOrdinal(d3.schemeCategory10);
 function render(){
   dcel = pointsToDCEL(points)
   addVertexType(dcel)
-  toMonotone(dcel)
 
   circleSel.html('').appendMany(dcel.vertices, 'circle.point')
-      .at({r})
-      .call(drag)
-      .call(d3.attachTooltip)
-      .translate(ƒ('pos'))
-      .st({fill: ƒ('pos', 'color')})
+    .at({r})
+    .call(drag)
+    .call(d3.attachTooltip)
+    .translate(ƒ('pos'))
+    .st({fill: ƒ('pos', 'color')})
 
   textSel.html('').appendMany(dcel.vertices, 'text.point')
-      .translate(ƒ('pos'))
-      .text(ƒ('type'))
-      .st('fill', function(d){ return d.type == 'merge' || d.type == 'split' ? '#c00' : '#000'})
-      .at({textAnchor: 'middle', dy: -10})
-
+    .translate(ƒ('pos'))
+    .text(ƒ('type'))
+    .st('fill', function(d){ return d.type == 'merge' || d.type == 'split' ? '#c00' : '#000'})
+    .at({textAnchor: 'middle', dy: -10})
 
   polygonSel.at('d', pathStr)
+
+  toMonotone(dcel)
+  lineSel.html('').appendMany(diag, 'path')
+    .at({d: d => pathStr(d.map(ƒ('pos'))), stroke: 'black'})
 
 }
 render()
@@ -62,15 +64,17 @@ render()
 
 function toMonotone(dcel){
   console.log('****STARTING****')
-
+  diag = []
   var curY, curI
 
-  var T = tree(function(d){ 
+  T = tree(function(d){ 
     return !d.origin ? d : lineXatY([d.origin.pos, d.next.origin.pos], curY) })
-  var Q = _.sortBy(dcel.vertices, function(d){ return d.pos[1] + ε*d.pos[0] })
+  var Q = _.sortBy(dcel.vertices, function(d){ return d.pos[1] - ε*d.pos[0] })
   Q.forEach(function(v, i){
     curY = v.pos[1]
     curI = i
+
+    console.log('%cP', 'font-weight: bold; color: ' + v.pos.color)
 
     //next, prev and left edge
     var ne = getNextEdge(v),
@@ -80,27 +84,42 @@ function toMonotone(dcel){
     if        (v.type == 'start'){
       ne.helper = v
       T.insert(ne)
-    } else if (v.type == 'end'){
-      if (ne.helper && ne.helper.type == 'merge') addDiag(v, ne.helper)
-    } else if (v.type == 'split'){
-      addDiag(v, le.helper)
 
+    } else if (v.type == 'end'){
+      if (pe.helper && pe.helper.type == 'merge') addDiag(v, pe.helper)
+      console.log('RM: ')
+      logIE(pe)
+      T.remove(pe)
+
+    } else if (v.type == 'split'){
+      // logIE(le)
+      addDiag(v, le.helper)
       ne.helper = v
       T.insert(ne)
+
     } else if (v.type == 'merge'){
+      if (pe.helper && pe.helper.type == 'merge') addDiag(v, pe.helper)
+      T.remove(pe)
+      le = T.neighbors(v.pos[0])[0]
+      if (le.helper && le.helper.type == 'merge') addDiag(v, le.helper)
+      le.helper = v
+    
+    } else if (v.type == 'regular'){
+      if (ne.next.origin.pos[1] > v.pos[1]){
+        if (pe.helper && pe.helper.type == 'merge') addDiag(v, pe.helper)
+        T.remove(pe)
+        T.insert(ne)
+        ne.helper = v
+        // console.log('%cP', 'font-weight: bold; color: ' + v.pos.color)
+
+      } else{
+        if (le.helper && le.helper.type == 'merge') addDiag(v, le.helper)
+        le.helper = v
+      }
 
     }
-
-    // try to add each inident edge to tree
-    // TODO change to loop so this works after diags have been added
-    // var ie = v.incidentEdge
-    // addIncidentEdgeToTree(ie)
-    // addIncidentEdgeToTree(ie.twin)
-    // var ie2 = ie.origin == v ? ie.prev : ie.next
-    // addIncidentEdgeToTree(ie2)
-    // addIncidentEdgeToTree(ie2.twin)
-  
-    // console.log('length ', T.length)
+    console.log('length ', T.length)
+    T.forEach(logIE)
     // console.log.apply(console, ['%c' + T.map(ƒ('origin', 'pos', 'i')).join(',%c ')].concat(T.map(d => 'color: ' + d.origin.pos.color)))
   })
 
@@ -118,14 +137,8 @@ function toMonotone(dcel){
     return ie.origin == v ? ie : ie.next
   }
 
-  function getPrevEdge(v){
-    var ie = v.incidentEdge
-    ie = ie.incidentFace.inner ? ie : ie.twin
-    return ie.origin == v ? ie.prev : ie
-  }
-
   function addDiag(a, b){
-    console.log(a, b)
+    diag.push([a, b])
   }
 }
 
