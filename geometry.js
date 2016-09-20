@@ -62,7 +62,7 @@ function lineXatY(l, y){
 
       m = (ay - by)/(ax - bx)
 
-  return (y - ay + m*ax)/m 
+  return ax == bx ? ax : (y - ay + m*ax)/m 
 }
 
 function allIntersections(lines){

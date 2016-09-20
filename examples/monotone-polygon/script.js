@@ -262,6 +262,8 @@ function tree(key){
 
   array.findIndex = function(d){ return bisect(array, key(d)) }
 
+  array.key = key
+
   return array
 }
 
