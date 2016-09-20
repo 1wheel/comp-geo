@@ -36,8 +36,8 @@ var color = d3.scaleOrdinal(d3.schemeCategory10);
 
 function render(){
   dcel = pointsToDCEL(points)
-  toMonotone(dcel)
   addVertexType(dcel)
+  toMonotone(dcel)
 
   circleSel.html('').appendMany(dcel.vertices, 'circle.point')
       .at({r})
@@ -61,39 +61,71 @@ render()
 
 
 function toMonotone(dcel){
-  var Q = _.sortBy(dcel.vertices, function(d){ return d.pos[1] + ε*d.pos[0] })
-
-  Q.forEach((d, i) => d.i = i)
-
-
   console.log('****STARTING****')
-  var curY;
-  var curI
-  var T = tree(function(d){ return lineXatY([d.origin.pos, d.next.origin.pos], curY) })
+
+  var curY, curI
+
+  var T = tree(function(d){ 
+    return !d.origin ? d : lineXatY([d.origin.pos, d.next.origin.pos], curY) })
+  var Q = _.sortBy(dcel.vertices, function(d){ return d.pos[1] + ε*d.pos[0] })
   Q.forEach(function(v, i){
     curY = v.pos[1]
     curI = i
 
+    //next, prev and left edge
+    var ne = getNextEdge(v),
+        pe = ne.prev,
+        le = T.neighbors(v.pos[0])[0]
+
+    if        (v.type == 'start'){
+      ne.helper = v
+      T.insert(ne)
+    } else if (v.type == 'end'){
+      if (ne.helper && ne.helper.type == 'merge') addDiag(v, ne.helper)
+    } else if (v.type == 'split'){
+      addDiag(v, le.helper)
+
+      ne.helper = v
+      T.insert(ne)
+    } else if (v.type == 'merge'){
+
+    }
+
     // try to add each inident edge to tree
     // TODO change to loop so this works after diags have been added
-    var ie = v.incidentEdge
-    addIncidentEdgeToTree(ie)
-    addIncidentEdgeToTree(ie.twin)
-    var ie2 = ie.origin == v ? ie.prev : ie.next
-    addIncidentEdgeToTree(ie2)
-    addIncidentEdgeToTree(ie2.twin)
+    // var ie = v.incidentEdge
+    // addIncidentEdgeToTree(ie)
+    // addIncidentEdgeToTree(ie.twin)
+    // var ie2 = ie.origin == v ? ie.prev : ie.next
+    // addIncidentEdgeToTree(ie2)
+    // addIncidentEdgeToTree(ie2.twin)
   
     // console.log('length ', T.length)
-    console.log.apply(console, ['%c' + T.map(ƒ('origin', 'pos', 'i')).join(',%c ')].concat(T.map(d => 'color: ' + d.origin.pos.color)))
+    // console.log.apply(console, ['%c' + T.map(ƒ('origin', 'pos', 'i')).join(',%c ')].concat(T.map(d => 'color: ' + d.origin.pos.color)))
   })
 
   //add incident edge to tree
   function addIncidentEdgeToTree(ie){
     if (!ie.incidentFace.inner) return
     var isBelow = ie.origin.pos[1] >= curY && ie.next.origin.pos[1] >= curY
-    console.log(curY, curI, isBelow)
     isBelow ? T.insert(ie) : T.remove(ie)
+  }
 
+  //find ei from vi
+  function getNextEdge(v){
+    var ie = v.incidentEdge
+    ie = ie.incidentFace.inner ? ie : ie.twin
+    return ie.origin == v ? ie : ie.next
+  }
+
+  function getPrevEdge(v){
+    var ie = v.incidentEdge
+    ie = ie.incidentFace.inner ? ie : ie.twin
+    return ie.origin == v ? ie.prev : ie
+  }
+
+  function addDiag(a, b){
+    console.log(a, b)
   }
 }
 
