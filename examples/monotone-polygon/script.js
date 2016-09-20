@@ -63,7 +63,7 @@ render()
 
 
 function toMonotone(dcel){
-  console.log('****STARTING****')
+  // console.log('****STARTING****')
   diag = []
   var curY, curI
 
@@ -74,7 +74,7 @@ function toMonotone(dcel){
     curY = v.pos[1]
     curI = i
 
-    console.log('%cP', 'font-weight: bold; color: ' + v.pos.color)
+    // console.log('%cP', 'font-weight: bold; color: ' + v.pos.color)
 
     //next, prev and left edge
     var ne = getNextEdge(v),
@@ -87,12 +87,9 @@ function toMonotone(dcel){
 
     } else if (v.type == 'end'){
       if (pe.helper && pe.helper.type == 'merge') addDiag(v, pe.helper)
-      console.log('RM: ')
-      logIE(pe)
       T.remove(pe)
 
     } else if (v.type == 'split'){
-      // logIE(le)
       addDiag(v, le.helper)
       ne.helper = v
       T.insert(ne)
@@ -110,17 +107,14 @@ function toMonotone(dcel){
         T.remove(pe)
         T.insert(ne)
         ne.helper = v
-        // console.log('%cP', 'font-weight: bold; color: ' + v.pos.color)
-
       } else{
         if (le.helper && le.helper.type == 'merge') addDiag(v, le.helper)
         le.helper = v
       }
 
     }
-    console.log('length ', T.length)
-    T.forEach(logIE)
-    // console.log.apply(console, ['%c' + T.map(ƒ('origin', 'pos', 'i')).join(',%c ')].concat(T.map(d => 'color: ' + d.origin.pos.color)))
+    // console.log('length ', T.length)
+    // T.forEach(logIE)
   })
 
   //add incident edge to tree
