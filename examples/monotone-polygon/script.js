@@ -1,8 +1,9 @@
-var width = 960, height = 500, ε = 1e-9, ƒ = d3.f, r = 8;
+var width = 960, height = 500, ε = 1e-9, ƒ = d3.f, r = 6;
 
-var colors = ['#F44336', '#2196F3', '#4CAF50', '#9C27B0', '#777','#FF9800', '#795548', '#000']
+var colors = ['#F44336', '#2196F3', '#4CAF50', '#9C27B0', '#777','#FF9800', '#795548', '#eded1c']
 
 var drag = d3.drag().on('drag', function(d){
+  d3.timerFlush() 
   d.pos[0] = Math.round(clamp(r, d3.event.x, width - r))
   d.pos[1] = Math.round(clamp(r, d3.event.y, height - r))
   render()
@@ -27,12 +28,16 @@ var polygonSel = svg.append('path')
     .datum(points)
     .at('fill-opacity', .1)
 
-var lineSel = svg.append('g')
+var lineSel = svg.append('g.ls')
+var ieSel = svg.append('g.ie')
 
 var circleSel = svg.append('g')
 var textSel = svg.append('g')
 
+var sweepPath = svg.append('path').at({d: 'M0,0h' + width, stroke: 'black', strokeDasharray: '2 3', pointerEvents: 'none'})
+
 var color = d3.scaleOrdinal(d3.schemeCategory10);
+
 
 function render(){
   var dcel = pointsToDCEL(points)
@@ -53,8 +58,45 @@ function render(){
 
   polygonSel.at('d', pathStr)
 
-  lineSel.html('').appendMany(diag, 'path')
-    .at({d: d => pathStr(d.map(ƒ('pos'))), stroke: 'black'})
+  lineSel.html('')
+
+  sweepPath.attr('transform', 'translate(0,' + Q[0].pos[1] + ')')
+
+  var i = 0
+  if (window.animationInterval) window.animationInterval.stop()
+  window.animationInterval = d3.interval(step, 2000)
+  step()
+  function step(){
+    var d = Q[i]
+
+    sweepPath.transition()
+        .attr('transform', 'translate(0,' + d.pos[1] + ')')
+
+    var updateSel = ieSel.selectAll('path')
+      .data(d.st.T, ƒ('o'))
+
+    ieSel.selectAll('path').transition()
+      .attr('stroke', d => d.h.color)
+
+    updateSel.enter().append('path')
+      .at({d: d => pathStr([d.o, d.o]), stroke: d => d.h.color, strokeWidth: 3})
+      .transition().delay(500).duration(500)
+      .attr('d', d => pathStr([d.o, d.p]))
+
+    updateSel.exit()
+      .transition()
+      .attr('stroke-width', 0)
+      .remove()
+
+    circleSel.selectAll('circle')
+      .transition()
+      .attr('r', function(e, j){ return e == d ? r*2 : r })
+
+    lineSel.selectAll('path').data(d.st.diag).enter().append('path')
+      .at({d: d => pathStr(d.map(ƒ('pos'))), stroke: '#fff', strokeWidth: 3})
+    console.log(lineSel.size(), d.st.diag.length)
+    if (++i == Q.length) window.animationInterval.stop()
+  }
 
 }
 render()
@@ -68,7 +110,7 @@ function toMonotone(dcel){
 
   T = tree(function(d){ 
     return !d.origin ? d : lineXatY([d.origin.pos, d.next.origin.pos], curY) })
-  var Q = _.sortBy(dcel.vertices, function(d){ return d.pos[1] - ε*d.pos[0] })
+  Q = _.sortBy(dcel.vertices, function(d){ return d.pos[1] - ε*d.pos[0] })
   Q.forEach(function(v, i){
     curY = v.pos[1]
     curI = i
@@ -88,6 +130,7 @@ function toMonotone(dcel){
 
     } else if (v.type == 'split'){
       addDiag(v, le.helper)
+      le.helper = v
       ne.helper = v
       T.insert(ne)
 
@@ -109,6 +152,8 @@ function toMonotone(dcel){
         le.helper = v
       }
     }
+
+    v.st = {T: T.map(function(d){ return {o: d.origin.pos, p: d.next.origin.pos, h: d.helper.pos}}), diag: diag.slice()}
   })
 
   return diag
