@@ -35,8 +35,8 @@ var textSel = svg.append('g')
 var color = d3.scaleOrdinal(d3.schemeCategory10);
 
 function render(){
-  dcel = pointsToDCEL(points)
-  addVertexType(dcel)
+  var dcel = pointsToDCEL(points)
+  var diag = toMonotone(dcel)
 
   circleSel.html('').appendMany(dcel.vertices, 'circle.point')
     .at({r})
@@ -53,7 +53,6 @@ function render(){
 
   polygonSel.at('d', pathStr)
 
-  toMonotone(dcel)
   lineSel.html('').appendMany(diag, 'path')
     .at({d: d => pathStr(d.map(ƒ('pos'))), stroke: 'black'})
 
@@ -63,8 +62,8 @@ render()
 
 
 function toMonotone(dcel){
-  // console.log('****STARTING****')
-  diag = []
+  addVertexType(dcel)
+  var diag = []
   var curY, curI
 
   T = tree(function(d){ 
@@ -73,8 +72,6 @@ function toMonotone(dcel){
   Q.forEach(function(v, i){
     curY = v.pos[1]
     curI = i
-
-    // console.log('%cP', 'font-weight: bold; color: ' + v.pos.color)
 
     //next, prev and left edge
     var ne = getNextEdge(v),
@@ -111,18 +108,10 @@ function toMonotone(dcel){
         if (le.helper && le.helper.type == 'merge') addDiag(v, le.helper)
         le.helper = v
       }
-
     }
-    // console.log('length ', T.length)
-    // T.forEach(logIE)
   })
 
-  //add incident edge to tree
-  function addIncidentEdgeToTree(ie){
-    if (!ie.incidentFace.inner) return
-    var isBelow = ie.origin.pos[1] >= curY && ie.next.origin.pos[1] >= curY
-    isBelow ? T.insert(ie) : T.remove(ie)
-  }
+  return diag
 
   //find ei from vi
   function getNextEdge(v){
@@ -134,36 +123,34 @@ function toMonotone(dcel){
   function addDiag(a, b){
     diag.push([a, b])
   }
+
+  function logIE(ie){
+    var prefix = 'font-weight: bold; color: '
+    console.log('%cF %cT', prefix + ie.origin.pos.color, prefix + ie.next.origin.pos.color)
+  }
+
+
+  function addVertexType(dcel){
+    var pts = dcel.vertices
+    pts.forEach(function(d, i){
+      var lP = pts[mod(i - 1, pts.length)].pos
+      var rP = pts[mod(i + 1, pts.length)].pos
+      var p = d.pos
+
+      var isAboveL = p[1] < lP[1] || (p[1] == lP[1] && p[0] < lP[0])
+      var isAboveR = p[1] < rP[1] || (p[1] == rP[1] && p[0] < rP[0])
+      var isLeftPoint = isLeft(lP, p, rP)
+
+      if (isAboveL && isAboveR){
+        d.type = !isLeftPoint ? 'start' : 'split'
+      } else if (!isAboveL && !isAboveR){
+        d.type = !isLeftPoint ? 'end' : 'merge'
+      } else {
+        d.type = 'regular'
+      }
+    })
+  }
 }
-
-function logIE(ie){
-  var prefix = 'font-weight: bold; color: '
-  console.log('%cF %cT', prefix + ie.origin.pos.color, prefix + ie.next.origin.pos.color)
-}
-
-
-function addVertexType(dcel){
-  var pts = dcel.vertices
-  pts.forEach(function(d, i){
-    var lP = pts[mod(i - 1, pts.length)].pos
-    var rP = pts[mod(i + 1, pts.length)].pos
-    var p = d.pos
-
-    var isAboveL = p[1] < lP[1] || (p[1] == lP[1] && p[0] < lP[0])
-    var isAboveR = p[1] < rP[1] || (p[1] == rP[1] && p[0] < rP[0])
-    var isLeftPoint = isLeft(lP, p, rP)
-
-    if (isAboveL && isAboveR){
-      d.type = !isLeftPoint ? 'start' : 'split'
-    } else if (!isAboveL && !isAboveR){
-      d.type = !isLeftPoint ? 'end' : 'merge'
-    } else {
-      d.type = 'regular'
-    }
-  })
-
-}
-
 
 
 function isLeft(a, b, c){
