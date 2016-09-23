@@ -64,7 +64,7 @@ function render(){
 
   var i = 0
   if (window.animationInterval) window.animationInterval.stop()
-  window.animationInterval = d3.interval(step, 2000)
+  window.animationInterval = d3.interval(step, 3000)
   step()
   function step(){
     var d = Q[i]
@@ -94,7 +94,6 @@ function render(){
 
     lineSel.selectAll('path').data(d.st.diag).enter().append('path')
       .at({d: d => pathStr(d.map(ƒ('pos'))), stroke: '#fff', strokeWidth: 3})
-    console.log(lineSel.size(), d.st.diag.length)
     if (++i == Q.length) window.animationInterval.stop()
   }
 
