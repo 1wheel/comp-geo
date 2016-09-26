@@ -65,12 +65,12 @@ function trianglulateMonotone(dcel){
   var Q = _.sortBy(dcel.vertices, function(d){ return d.pos[1] - ε*d.pos[0] })
   var S = [Q[0], Q[1]]
   Q.forEach(function(v, i){
-    v.isL = isLeftV(v)
+    v.isL = i ? isLeftV(v) : false
     if (i < 2) return
 
-    if (v.isL == !_.last(Q).isL){
-      var newS = [S.pop(), v]
-      S.forEach(d => diag.push([v, d]))
+    if (v.isL !== _.last(Q).isL){
+      var newS = [S[0], v]
+      S.forEach((d, i) => i ? diag.push([v, d]) : 0)
       S = newS
     } else{
 
