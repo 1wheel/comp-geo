@@ -47,7 +47,7 @@ function render(){
     .call(d3.attachTooltip)
     .translate(ƒ('pos'))
     .st({fill: ƒ('pos', 'color')})
-    .st({fill: function(d){ return d.isL ? 'red' : 'blue' }})
+    // .st({fill: function(d){ return d.isL ? 'red' : 'blue' }})
 
   polygonSel.at('d', pathStr)
 
@@ -61,20 +61,29 @@ render()
 
 function trianglulateMonotone(dcel){
   var diag =[]
+  console.clear()
 
-  var Q = _.sortBy(dcel.vertices, function(d){ return d.pos[1] - ε*d.pos[0] })
+  Q = _.sortBy(dcel.vertices, function(d){ return d.pos[1] - ε*d.pos[0] })
   var S = [Q[0], Q[1]]
   Q.forEach(function(v, i){
     v.isL = i ? isLeftV(v) : false
     if (i < 2) return
 
-    if (v.isL !== _.last(Q).isL){
-      var newS = [S[0], v]
+    console.log(v.isL !== _.last(S).isL)
+    if (v.isL !== _.last(S).isL){
+      var newS = [_.last(S), v]
       S.forEach((d, i) => i ? diag.push([v, d]) : 0)
       S = newS
     } else{
-
+      var lp = S.pop()
+      S.forEach(d => lp = d && diag.push([v, d]))
+      S = [S[0], v]
     }
+
+    S.forEach(function(d){
+      var prefix = 'font-weight: bold; color: '
+      console.log('%cV %cS', prefix + v.pos.color, prefix + d.pos.color)
+    })
 
   })
 
