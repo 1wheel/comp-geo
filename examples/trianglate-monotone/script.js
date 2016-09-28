@@ -67,23 +67,36 @@ function trianglulateMonotone(dcel){
   var S = [Q[0], Q[1]]
   Q.forEach(function(v, i){
     v.isL = i ? isLeftV(v) : false
+
+    //skip first two points
     if (i < 2) return
 
-    console.log(v.isL !== _.last(S).isL)
-    if (v.isL !== _.last(S).isL){
+    //connect everything on the last point
+    if (i == Q.length - 1){
+      S.pop()
+      S.forEach((d, i) => i ? diag.push([v, d]) : 0)
+      return
+    }
+
+    // console.log(v.isL === _.last(S).isL)
+    if (v.isL === _.last(S).isL){
+      var lp = S.pop()
+      while (isInside(v, lp, _.last(S))){
+        lp = S.pop()
+        diag.push([v, lp])
+      }
+      S.push(lp)
+      S.push(v)
+    } else{
       var newS = [_.last(S), v]
       S.forEach((d, i) => i ? diag.push([v, d]) : 0)
       S = newS
-    } else{
-      var lp = S.pop()
-      S.forEach(d => lp = d && diag.push([v, d]))
-      S = [S[0], v]
     }
 
-    S.forEach(function(d){
-      var prefix = 'font-weight: bold; color: '
-      console.log('%cV %cS', prefix + v.pos.color, prefix + d.pos.color)
-    })
+    // S.forEach(function(d){
+    //   var prefix = 'font-weight: bold; color: '
+    //   console.log('%cV %cS', prefix + v.pos.color, prefix + d.pos.color)
+    // })
 
   })
 
@@ -98,6 +111,12 @@ function trianglulateMonotone(dcel){
   function isLeftV(v){
     var ne = getNextEdge(v)
     return ne.next.origin.pos[1] > v.pos[1]
+  }
+
+  function isInside(v, lp, np){
+    if (!np) return false
+    var isLeftOf = lineXatY([v.pos, lp.pos], np.pos[1]) < np.pos[0]
+    return isLeftOf ^ v.isL
   }
 }
 
