@@ -26,6 +26,7 @@ var polygonSel = svg.append('path')
     .datum(points)
     .at('fill-opacity', .1)
 
+var overlaySel = svg.append('g')
 var lineSel = svg.append('g')
 
 var circleSel = svg.append('g')
@@ -42,23 +43,37 @@ function render(){
   polygonSel.at('d', pathStr)
 
   lines = triangulateNaiveDraw(points.slice(), 1)
-  lines.forEach(function(d, i){ d.i = i })
+  lines.forEach(function(d, i){ d.i = i, d.poly0.i = i, d.poly1.i = i })
 
-  var delay = 1000
+  var delay = 300
 
-  lineSel.html('').appendMany(lines, 'path.connection')
-      .at({stroke: 'black', strokeWidth: 1})
-      .at('d', function(d){ return 'M' + d.line[0] + 'L' + d.line[0] })
-    .transition().delay(function(d, i){ return i*delay + 100 })
-      .attr('d', ƒ('line', pathStr))
-
+  lineSel.html('')
   lineSel.appendMany(lines, 'path.fill')
-      .at({stroke: '#f0f', fill: '#f0f', strokeWidth: 4, fillOpacity: .4, opacity: 0})
+      .at({stroke: '#f0f', fill: '#f0f', strokeWidth: 2, fillOpacity: .4, opacity: 0})
       .at('d', ƒ('pts', pathStr))
     .transition().delay(function(d, i){ return i*delay + 100 }).duration(100)
       .attr('opacity', 1)
-    .transition().duration(100).delay(delay/2)
+    .transition().duration(1000).delay(delay/2)
+      .attr('stroke-width', 0)
       .attr('opacity', 0)
+  lineSel.appendMany(lines, 'path.connection')
+      .at({stroke: '#fff', strokeWidth: 3})
+      .at('d', function(d){ return 'M' + d.line[0] + 'L' + d.line[0] })
+    .transition().delay(function(d, i){ return i*delay + 100 })
+      .attr('d', ƒ('line', pathStr, d => d + 'Z'))
+
+  overlaySel.html('')
+  overlaySel.appendMany(lines.map(ƒ('poly0')).filter(d => d.length == 3), 'path')
+      .attr('d', pathStr)
+      .attr('opacity', 0)
+    .transition().delay(function(d, i){ return (d.i)*delay + 400 }).duration(200)
+      .attr('opacity', 1)
+  overlaySel.appendMany(lines.map(ƒ('poly1')).filter(d => d.length == 3), 'path')
+      .attr('d', pathStr)
+      .attr('opacity', 0)
+    .transition().delay(function(d, i){ return (d.i)*delay + 400 }).duration(200)
+      .attr('opacity', 1)
+
 
 }
 render()
@@ -86,7 +101,6 @@ function triangulateNaiveDraw(pts, k){
     rI = pts.indexOf(insideTriangle[minTriangle])
   } 
 
-  var lines = [{line: [pts[lI], pts[rI]], pts: pts}]
   var poly0 = [pts[lI]]
   var i = lI
   while (i != rI){
@@ -101,8 +115,10 @@ function triangulateNaiveDraw(pts, k){
     poly1.push(pts[i])
   }
 
+  var lines = [{line: [pts[lI], pts[rI]], pts, poly0, poly1}]
   lines = poly0.length > 3 ? lines.concat(triangulateNaiveDraw(poly0, k + 1)) : lines
   lines = poly1.length > 3 ? lines.concat(triangulateNaiveDraw(poly1, k + 1)) : lines
+
 
   return lines
 }
